@@ -1,4 +1,4 @@
-[![CodeFactor](https://www.codefactor.io/repository/github/oscarvsp/bepbop/badge)](https://www.codefactor.io/repository/github/oscarvsp/bepbop)
+[![CodeFactor](https://www.codefactor.io/repository/github/oscarvsp/bepbot/badge)](https://www.codefactor.io/repository/github/oscarvsp/bepbot)
 
 # BepBot
 
