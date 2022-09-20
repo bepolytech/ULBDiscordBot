@@ -26,6 +26,9 @@ class Thread(commands.Cog):
         except json.JSONDecodeError:
             self.tag_role_map: Dict[str, List[int]] = {}
             self.save_tag_role_map()
+        except FileNotFoundError:
+            self.tag_role_map: Dict[str, List[int]] = {}
+            self.save_tag_role_map()
 
     def save_tag_role_map(self) -> None:
         with open("cogs/Thread/tags.json", "w") as json_file:
