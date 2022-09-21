@@ -29,7 +29,7 @@ class Thread(commands.Cog):
         except FileNotFoundError:
             self.tag_role_map: Dict[str, List[int]] = {}
             self.save_tag_role_map()
-            
+
     ### Utility Functions
 
     def save_tag_role_map(self) -> None:
@@ -41,7 +41,7 @@ class Thread(commands.Cog):
 
     def role_from_name(self, guild: disnake.Guild, name: str) -> Optional[disnake.Role]:
         return next((role for role in guild.roles if role.name == name), None)
-    
+
     ### Discord Commands & Sub commands
 
     @commands.slash_command(name="tag", default_member_permissions=disnake.Permissions.all())
@@ -146,7 +146,7 @@ class Thread(commands.Cog):
             )
             .set_footer(text="Tu peux rejeter ce message pour le faire disparaitre.")
         )
-        
+
     @tag.sub_command(name="view", description="Voir tous les roles liés à un tag")
     async def tag_view(
         self,
@@ -172,7 +172,7 @@ class Thread(commands.Cog):
             )
             .set_footer(text="Tu peux rejeter ce message pour le faire disparaitre.")
         )
-        
+
     ### Commands autocomplete
 
     @tag_link.autocomplete("tag")
@@ -249,7 +249,11 @@ class Thread(commands.Cog):
                 for role_id in role_ids:
                     role = thread.guild.get_role(role_id)
                     if role:
-                        [members_to_notify.append(member) for member in role.members if member not in members_to_notify and member not in thread.members]
+                        [
+                            members_to_notify.append(member)
+                            for member in role.members
+                            if member not in members_to_notify and member not in thread.members
+                        ]
 
         # End here if nobody to notify
         if not members_to_notify:
@@ -294,15 +298,14 @@ class Thread(commands.Cog):
         # Send the notif to all selected members
         for member in members_to_notify:
             await member.send(embed=embed)
-            
+
     @commands.Cog.listener("on_thread_update")
     async def thread_update(self, before: disnake.Thread, after: disnake.Thread):
-        
+
         new_tags: List[disnake.ForumTag] = [tag for tag in after.applied_tags if tag not in before.applied_tags]
-        
+
         if not new_tags:
             return
-        
 
         # Make a list of all the members that has at least on role corresponding to the tags of the thread
         members_to_notify: List[disnake.Member] = []
@@ -312,7 +315,11 @@ class Thread(commands.Cog):
                 for role_id in role_ids:
                     role = after.guild.get_role(role_id)
                     if role:
-                        [members_to_notify.append(member) for member in role.members if member not in members_to_notify and member not in after.members]
+                        [
+                            members_to_notify.append(member)
+                            for member in role.members
+                            if member not in members_to_notify and member not in after.members
+                        ]
 
         # End here if nobody to notify
         if not members_to_notify:
