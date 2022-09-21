@@ -29,6 +29,8 @@ class Thread(commands.Cog):
         except FileNotFoundError:
             self.tag_role_map: Dict[str, List[int]] = {}
             self.save_tag_role_map()
+            
+    ### Utility Functions
 
     def save_tag_role_map(self) -> None:
         with open("cogs/Thread/tags.json", "w") as json_file:
@@ -39,6 +41,8 @@ class Thread(commands.Cog):
 
     def role_from_name(self, guild: disnake.Guild, name: str) -> Optional[disnake.Role]:
         return next((role for role in guild.roles if role.name == name), None)
+    
+    ### Discord Commands & Sub commands
 
     @commands.slash_command(name="tag", default_member_permissions=disnake.Permissions.all())
     async def tag(self, inter):
@@ -142,6 +146,34 @@ class Thread(commands.Cog):
             )
             .set_footer(text="Tu peux rejeter ce message pour le faire disparaitre.")
         )
+        
+    @tag.sub_command(name="view", description="Voir tous les roles liés à un tag")
+    async def tag_view(
+        self,
+        inter: ApplicationCommandInteraction,
+        tag: str = commands.Param(description="Le tag à voir. Seuls les tags avec au moins un role lié sont affichés."),
+    ):
+        await inter.response.defer(ephemeral=True)
+
+        _tag = self.tag_from_name(tag)
+        if _tag == None:
+            raise ValueError(f"Unable to retrieve tag fro mname {tag}")
+
+        linked_roles: List[disnake.Role] = [inter.guild.get_role(id) for id in self.tag_role_map.get(str(_tag.id))]
+
+        await inter.edit_original_message(
+            embed=disnake.Embed(title=f"__**Tag**__ {_tag.emoji} {_tag.name}", color=disnake.Colour.green())
+            .add_field(
+                name="__Roles liés :__",
+                value="\n> " + "\n> ".join([role.mention for role in linked_roles])
+                if linked_roles
+                else "*Aucun role lié*",
+                inline=False,
+            )
+            .set_footer(text="Tu peux rejeter ce message pour le faire disparaitre.")
+        )
+        
+    ### Commands autocomplete
 
     @tag_link.autocomplete("tag")
     @tag_unlink.autocomplete("tag")
@@ -188,34 +220,8 @@ class Thread(commands.Cog):
                 if (role.id in role_already_linked_ids and role.name.lower().startswith(value.lower()))
             ]
 
-    @tag.sub_command(name="view", description="Voir tous les roles liés à un tag")
-    async def tag_view(
-        self,
-        inter: ApplicationCommandInteraction,
-        tag: str = commands.Param(description="Le tag à voir. Seuls les tags avec au moins un role lié sont affichés."),
-    ):
-        await inter.response.defer(ephemeral=True)
-
-        _tag = self.tag_from_name(tag)
-        if _tag == None:
-            raise ValueError(f"Unable to retrieve tag fro mname {tag}")
-
-        linked_roles: List[disnake.Role] = [inter.guild.get_role(id) for id in self.tag_role_map.get(str(_tag.id))]
-
-        await inter.edit_original_message(
-            embed=disnake.Embed(title=f"__**Tag**__ {_tag.emoji} {_tag.name}", color=disnake.Colour.green())
-            .add_field(
-                name="__Roles liés :__",
-                value="\n> " + "\n> ".join([role.mention for role in linked_roles])
-                if linked_roles
-                else "*Aucun role lié*",
-                inline=False,
-            )
-            .set_footer(text="Tu peux rejeter ce message pour le faire disparaitre.")
-        )
-
     @tag_view.autocomplete("tag")
-    async def tag_link_autocomplete(self, inter: ApplicationCommandInteraction, value: str):
+    async def tag_view_autocomplete(self, inter: ApplicationCommandInteraction, value: str):
         if self.forum_channel == None:
             channel = inter.guild.get_channel(self.forum_channel_id)
             if isinstance(channel, disnake.ForumChannel):
@@ -230,6 +236,8 @@ class Thread(commands.Cog):
             if self.tag_role_map.get(str(tag.id)) and tag.name.lower().startswith(value.lower())
         ]
 
+    ### Cog Listeners
+
     @commands.Cog.listener("on_thread_create")
     async def thread_create(self, thread: disnake.Thread):
 
@@ -241,7 +249,7 @@ class Thread(commands.Cog):
                 for role_id in role_ids:
                     role = thread.guild.get_role(role_id)
                     if role:
-                        [members_to_notify.append(member) for member in role.members if member not in members_to_notify]
+                        [members_to_notify.append(member) for member in role.members if member not in members_to_notify and member not in thread.members]
 
         # End here if nobody to notify
         if not members_to_notify:
@@ -251,7 +259,7 @@ class Thread(commands.Cog):
         for member in members_to_notify:
             await thread.add_user(member)
 
-        # Wait until the first message if available to the API
+        # Wait until the first message is available to the API, up to <timer> sec
         timer: float = 10.0
         sec_to_wait: float = 0.5
         while thread.last_message == None and timer > 0:
@@ -259,7 +267,7 @@ class Thread(commands.Cog):
             timer -= sec_to_wait
 
         # Create the embed that will be sent as notification
-        if thread.last_message:
+        if thread.last_message and thread.last_message.content:
             max_text_size = 100
             text = thread.last_message.content
             if len(text) > max_text_size:
@@ -278,6 +286,69 @@ class Thread(commands.Cog):
             .add_field(
                 name="**Tags :**",
                 value="\n".join([f"{tag.emoji} {tag.name}" for tag in thread.applied_tags]),
+                inline=False,
+            )
+            .set_thumbnail(url="https://i.imgur.com/BHgic3o.png")
+        )
+
+        # Send the notif to all selected members
+        for member in members_to_notify:
+            await member.send(embed=embed)
+            
+    @commands.Cog.listener("on_thread_update")
+    async def thread_update(self, before: disnake.Thread, after: disnake.Thread):
+        
+        new_tags: List[disnake.ForumTag] = [tag for tag in after.applied_tags if tag not in before.applied_tags]
+        
+        if not new_tags:
+            return
+        
+
+        # Make a list of all the members that has at least on role corresponding to the tags of the thread
+        members_to_notify: List[disnake.Member] = []
+        for tag in new_tags:
+            role_ids: Union[List[int], None] = self.tag_role_map.get(str(tag.id), None)
+            if role_ids:
+                for role_id in role_ids:
+                    role = after.guild.get_role(role_id)
+                    if role:
+                        [members_to_notify.append(member) for member in role.members if member not in members_to_notify and member not in after.members]
+
+        # End here if nobody to notify
+        if not members_to_notify:
+            return
+
+        # Added all selected user to the thread
+        for member in members_to_notify:
+            await after.add_user(member)
+
+        # Wait until the first message is available to the API, up to <timer> sec
+        timer: float = 10.0
+        sec_to_wait: float = 0.5
+        while after.last_message == None and timer > 0:
+            await asyncio.sleep(sec_to_wait)
+            timer -= sec_to_wait
+
+        # Create the embed that will be sent as notification
+        if after.last_message and after.last_message.content:
+            max_text_size = 100
+            text = after.last_message.content
+            if len(text) > max_text_size:
+                text = text[: max_text_size - 3] + "..."
+            text = f'"{text}"'
+            text = "> " + "\n> ".join([f"*{line}*" for line in text.splitlines()])
+        else:
+            text = "*Unable to load the message*"
+
+        embed = (
+            disnake.Embed(
+                title="**Nouvelle discussion te concernant**",
+                description=f"> __**{after.name}**__\n{text}\n\n[Aller à la discussion]({after.jump_url})",
+                color=disnake.Colour.teal(),
+            )
+            .add_field(
+                name="**Tags :**",
+                value="\n".join([f"{tag.emoji} {tag.name}" for tag in after.applied_tags]),
                 inline=False,
             )
             .set_thumbnail(url="https://i.imgur.com/BHgic3o.png")
