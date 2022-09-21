@@ -40,7 +40,7 @@ class PoroBot(InteractionBot):
 
         if self.test_mode:
             logging.info("Starting in test mod...")
-            super().__init__(intents=intents, test_guilds=[533360564878180382])
+            super().__init__(intents=intents, test_guilds=[int(os.getenv("TEST_GUILD"))])
         else:
             logging.info("Starting in prod mod...")
             super().__init__(intents=intents)
@@ -75,13 +75,14 @@ class PoroBot(InteractionBot):
 
     def load_commands(self) -> None:
         for extension in os.listdir(f"./cogs"):
-            try:
-                self.load_extension(f"cogs.{extension}.{extension}")
-                logging.info(f"Loaded extension '{extension}'")
-            except Exception as e:
-                exception = f"{type(e).__name__}: {e}"
-                logging.warning(f"Failed to load extension {extension}\n{exception}\n{self.tracebackEx(exception)}")
-                self.start_succed = False
+            if extension != ".gitignore":
+                try:
+                    self.load_extension(f"cogs.{extension}.{extension}")
+                    logging.info(f"Loaded extension '{extension}'")
+                except Exception as e:
+                    exception = f"{type(e).__name__}: {e}"
+                    logging.warning(f"Failed to load extension {extension}\n{exception}\n{self.tracebackEx(exception)}")
+                    self.start_succed = False
 
     async def send_error_log(self, interaction: ApplicationCommandInteraction, error: Exception):
         tb = self.tracebackEx(error)

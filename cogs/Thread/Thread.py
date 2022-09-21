@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import asyncio
 import json
 import os
 from typing import Dict
@@ -263,33 +262,19 @@ class Thread(commands.Cog):
         for member in members_to_notify:
             await thread.add_user(member)
 
-        # Wait until the first message is available to the API, up to <timer> sec
-        timer: float = 10.0
-        sec_to_wait: float = 0.5
-        while thread.last_message == None and timer > 0:
-            await asyncio.sleep(sec_to_wait)
-            timer -= sec_to_wait
-
         # Create the embed that will be sent as notification
-        if thread.last_message and thread.last_message.content:
-            max_text_size = 100
-            text = thread.last_message.content
-            if len(text) > max_text_size:
-                text = text[: max_text_size - 3] + "..."
-            text = f'"{text}"'
-            text = "> " + "\n> ".join([f"*{line}*" for line in text.splitlines()])
-        else:
-            text = "*Unable to load the message*"
-
         embed = (
             disnake.Embed(
-                title="**Nouvelle discussion te concernant**",
-                description=f"> __**{thread.name}**__\n{text}\n\n[Aller à la discussion]({thread.jump_url})",
+                title=f"🗨️ __**{thread.name}**__",
+                description=f"[Aller à la discussion]({thread.jump_url})",
                 color=disnake.Colour.teal(),
             )
+            .set_author(name="Nouvelle discussion te concernant")
             .add_field(
                 name="**Tags :**",
-                value="\n".join([f"{tag.emoji} {tag.name}" for tag in thread.applied_tags]),
+                value="> " + "\n> ".join([f"{tag.emoji} {tag.name}" for tag in thread.applied_tags])
+                if thread.applied_tags
+                else "*no tags*",
                 inline=False,
             )
             .set_thumbnail(url="https://i.imgur.com/BHgic3o.png")
@@ -329,38 +314,23 @@ class Thread(commands.Cog):
         for member in members_to_notify:
             await after.add_user(member)
 
-        # Wait until the first message is available to the API, up to <timer> sec
-        timer: float = 10.0
-        sec_to_wait: float = 0.5
-        while after.last_message == None and timer > 0:
-            await asyncio.sleep(sec_to_wait)
-            timer -= sec_to_wait
-
         # Create the embed that will be sent as notification
-        if after.last_message and after.last_message.content:
-            max_text_size = 100
-            text = after.last_message.content
-            if len(text) > max_text_size:
-                text = text[: max_text_size - 3] + "..."
-            text = f'"{text}"'
-            text = "> " + "\n> ".join([f"*{line}*" for line in text.splitlines()])
-        else:
-            text = "*Unable to load the message*"
-
         embed = (
             disnake.Embed(
-                title="**Nouvelle discussion te concernant**",
-                description=f"> __**{after.name}**__\n{text}\n\n[Aller à la discussion]({after.jump_url})",
+                title=f"🗨️ __**{after.name}**__",
+                description=f"[Aller à la discussion]({after.jump_url})",
                 color=disnake.Colour.teal(),
             )
+            .set_author(name="Nouvelle discussion te concernant")
             .add_field(
                 name="**Tags :**",
-                value="\n".join([f"{tag.emoji} {tag.name}" for tag in after.applied_tags]),
+                value="> " + "\n> ".join([f"{tag.emoji} {tag.name}" for tag in after.applied_tags])
+                if after.applied_tags
+                else "*no tags*",
                 inline=False,
             )
             .set_thumbnail(url="https://i.imgur.com/BHgic3o.png")
         )
-
         # Send the notif to all selected members
         for member in members_to_notify:
             await member.send(embed=embed)
