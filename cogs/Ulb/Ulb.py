@@ -10,6 +10,7 @@ import disnake
 from disnake import ApplicationCommandInteraction
 from disnake.ext import commands
 
+from .emailManager import EmailManager
 from .modals import *
 from bot import Bot
 
@@ -64,6 +65,7 @@ class Ulb(commands.Cog):
         self.bot: Bot = bot
         self.ulb_guilds: Dict[disnake.Guild, ULBGuild] = {}
         self.ulb_users: Dict[disnake.User, ULBUser] = {}
+        self.emailManager = EmailManager()
 
     @commands.Cog.listener("on_ready")
     async def on_ready(self):
@@ -149,7 +151,7 @@ class Ulb(commands.Cog):
                 return False
         return True
 
-    def send_token_mail(self, mail: str) -> str:
+    def send_token_mail(self, email: str) -> str:
         """Generate and send a token to the given email address
 
         Parameters
@@ -163,7 +165,7 @@ class Ulb(commands.Cog):
             The token generated
         """
         token: str = secrets.token_hex(self.token_size)[: self.token_size]
-        # TODO send the email
+        self.emailManager.sendToken(email, token)
         return token
 
     @commands.slash_command(name="email", description="Vérifier son adresse mail ULB.")
