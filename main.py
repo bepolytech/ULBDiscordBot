@@ -22,7 +22,7 @@ import platform
 
 from dotenv import load_dotenv
 
-from bot.bot import Bot
+from bot import Bot
 
 if __name__ == "__main__":
 
