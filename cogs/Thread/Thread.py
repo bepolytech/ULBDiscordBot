@@ -139,7 +139,9 @@ class Thread(commands.Cog):
 
     ### Discord Commands & Sub commands ####
 
-    @commands.slash_command(name="thread_link", default_member_permissions=disnake.Permissions.all())
+    @commands.slash_command(
+        name="thread_link", default_member_permissions=disnake.Permissions.all(), guild_ids=[os.getenv("BEP_SERVER")]
+    )
     async def thread_link(self, inter):
         pass
 
@@ -278,7 +280,9 @@ class Thread(commands.Cog):
 
         await inter.edit_original_message(embed=embed)
 
-    @commands.slash_command(name="thread", default_member_permissions=disnake.Permissions.all())
+    @commands.slash_command(
+        name="thread", default_member_permissions=disnake.Permissions.all(), guild_ids=[os.getenv("BEP_SERVER")]
+    )
     async def thread(self, inter: ApplicationCommandInteraction):
         pass
 
@@ -402,99 +406,103 @@ class Thread(commands.Cog):
     @commands.Cog.listener("on_thread_create")  # Called each time a new thread is created
     async def thread_create(self, thread: disnake.Thread):
 
-        logging.debug(f"[Cog:{self.qualified_name}] [Thread:{thread.name}#{thread.id}] Creation event")
+        if thread.guild.id == os.getenv("BEP_SERVER"):
 
-        # Ignore thread that are not created from the selected forum channel
-        if thread.parent_id != self.forum_channel_id:
+            logging.debug(f"[Cog:{self.qualified_name}] [Thread:{thread.name}#{thread.id}] Creation event")
+
+            # Ignore thread that are not created from the selected forum channel
+            if thread.parent_id != self.forum_channel_id:
+                logging.debug(
+                    f"[Cog:{self.qualified_name}] [Thread:{thread.name}#{thread.id}] ignored because not in selected forum channel"
+                )
+                return
+
+            # Make a list of all the members that has at least one role corresponding to the tags of the thread, without duplicat
+            members_to_add: List[disnake.Member] = []
+            for tag in thread.applied_tags:
+                role_ids: Union[List[int], None] = self.tag_role_map.get(str(tag.id), None)
+                if role_ids:
+                    for role_id in role_ids:
+                        role = thread.guild.get_role(role_id)
+                        if role:
+                            [
+                                members_to_add.append(member)
+                                for member in role.members
+                                if member not in members_to_add and member != thread.owner
+                            ]
+
+            # End here if nobody to add
+            if not members_to_add:
+                logging.debug(f"[Cog:{self.qualified_name}] [Thread:{thread.name}#{thread.id}] Nobody to add")
+                return
+
+            # Add all selected memner to the thread
+            for member in members_to_add:
+                await thread.add_user(member)
+
+            # Send the notif to all selected members
+            notif = self.thread_to_notif(thread)
+            for member in members_to_add:
+                await member.send(embed=notif[0], components=[notif[1]])
+
             logging.debug(
-                f"[Cog:{self.qualified_name}] [Thread:{thread.name}#{thread.id}] ignored because not in selected forum channel"
+                f"[Cog:{self.qualified_name}] [Thread:{thread.name}#{thread.id}] {len(members_to_add)} member added"
             )
-            return
-
-        # Make a list of all the members that has at least one role corresponding to the tags of the thread, without duplicat
-        members_to_add: List[disnake.Member] = []
-        for tag in thread.applied_tags:
-            role_ids: Union[List[int], None] = self.tag_role_map.get(str(tag.id), None)
-            if role_ids:
-                for role_id in role_ids:
-                    role = thread.guild.get_role(role_id)
-                    if role:
-                        [
-                            members_to_add.append(member)
-                            for member in role.members
-                            if member not in members_to_add and member != thread.owner
-                        ]
-
-        # End here if nobody to add
-        if not members_to_add:
-            logging.debug(f"[Cog:{self.qualified_name}] [Thread:{thread.name}#{thread.id}] Nobody to add")
-            return
-
-        # Add all selected memner to the thread
-        for member in members_to_add:
-            await thread.add_user(member)
-
-        # Send the notif to all selected members
-        notif = self.thread_to_notif(thread)
-        for member in members_to_add:
-            await member.send(embed=notif[0], components=[notif[1]])
-
-        logging.debug(
-            f"[Cog:{self.qualified_name}] [Thread:{thread.name}#{thread.id}] {len(members_to_add)} member added"
-        )
 
     @commands.Cog.listener("on_thread_update")
     async def thread_update(self, before: disnake.Thread, after: disnake.Thread):
 
-        logging.debug(f"[Cog:{self.qualified_name}] [Thread:{after.name}#{after.id}] Update event")
+        if after.guild.id == os.getenv("BEP_SERVER"):
 
-        # Ignore thread that are not created from the selected forum channel
-        if before.parent_id != self.forum_channel_id:
+            logging.debug(f"[Cog:{self.qualified_name}] [Thread:{after.name}#{after.id}] Update event")
+
+            # Ignore thread that are not created from the selected forum channel
+            if before.parent_id != self.forum_channel_id:
+                logging.debug(
+                    f"[Cog:{self.qualified_name}] [Thread:{after.name}#{after.id}] ignored because not in selected forum channel"
+                )
+                return
+
+            new_tags: List[disnake.ForumTag] = [tag for tag in after.applied_tags if tag not in before.applied_tags]
+
+            if not new_tags:
+                logging.debug(f"[Cog:{self.qualified_name}] [Thread:{after.name}#{after.id}] Not new tags")
+                return
+
+            # Make a list of all the members that has at least on role corresponding to the new tags of the thread, without duplicat
+            members_to_add: List[disnake.Member] = []
+            members_already_added_ids: List[int] = [
+                member.id for member in await before.fetch_members()
+            ]  # Need to do this becauseThreadMember and Member does not compare correctly for now
+            for tag in new_tags:
+                role_ids: Union[List[int], None] = self.tag_role_map.get(str(tag.id), None)
+                if role_ids:
+                    for role_id in role_ids:
+                        role = after.guild.get_role(role_id)
+                        if role:
+                            [
+                                members_to_add.append(member)
+                                for member in role.members
+                                if member not in members_to_add and member.id not in members_already_added_ids
+                            ]
+
+            # End here if nobody to add
+            if not members_to_add:
+                logging.debug(f"[Cog:{self.qualified_name}] [Thread:{after.name}#{after.id}] Nobody new to add")
+                return
+
+            # Add all selected member to the thread
+            for member in members_to_add:
+                await after.add_user(member)
+
+            # Send the notif to all selected members
+            notif = self.thread_to_notif(after)
+            for member in members_to_add:
+                await member.send(embed=notif[0], components=[notif[1]])
+
             logging.debug(
-                f"[Cog:{self.qualified_name}] [Thread:{after.name}#{after.id}] ignored because not in selected forum channel"
+                f"[Cog:{self.qualified_name}] [Thread:{after.name}#{after.id}] {len(members_to_add)} new member added"
             )
-            return
-
-        new_tags: List[disnake.ForumTag] = [tag for tag in after.applied_tags if tag not in before.applied_tags]
-
-        if not new_tags:
-            logging.debug(f"[Cog:{self.qualified_name}] [Thread:{after.name}#{after.id}] Not new tags")
-            return
-
-        # Make a list of all the members that has at least on role corresponding to the new tags of the thread, without duplicat
-        members_to_add: List[disnake.Member] = []
-        members_already_added_ids: List[int] = [
-            member.id for member in await before.fetch_members()
-        ]  # Need to do this becauseThreadMember and Member does not compare correctly for now
-        for tag in new_tags:
-            role_ids: Union[List[int], None] = self.tag_role_map.get(str(tag.id), None)
-            if role_ids:
-                for role_id in role_ids:
-                    role = after.guild.get_role(role_id)
-                    if role:
-                        [
-                            members_to_add.append(member)
-                            for member in role.members
-                            if member not in members_to_add and member.id not in members_already_added_ids
-                        ]
-
-        # End here if nobody to add
-        if not members_to_add:
-            logging.debug(f"[Cog:{self.qualified_name}] [Thread:{after.name}#{after.id}] Nobody new to add")
-            return
-
-        # Add all selected member to the thread
-        for member in members_to_add:
-            await after.add_user(member)
-
-        # Send the notif to all selected members
-        notif = self.thread_to_notif(after)
-        for member in members_to_add:
-            await member.send(embed=notif[0], components=[notif[1]])
-
-        logging.debug(
-            f"[Cog:{self.qualified_name}] [Thread:{after.name}#{after.id}] {len(members_to_add)} new member added"
-        )
 
 
 def setup(bot: commands.InteractionBot):
