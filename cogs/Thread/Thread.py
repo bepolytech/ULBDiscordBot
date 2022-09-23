@@ -140,7 +140,9 @@ class Thread(commands.Cog):
     ### Discord Commands & Sub commands ####
 
     @commands.slash_command(
-        name="thread_link", default_member_permissions=disnake.Permissions.all(), guild_ids=[os.getenv("BEP_SERVER")]
+        name="thread_link",
+        default_member_permissions=disnake.Permissions.all(),
+        guild_ids=[int(os.getenv("BEP_SERVER"))],
     )
     async def thread_link(self, inter):
         pass
@@ -281,7 +283,7 @@ class Thread(commands.Cog):
         await inter.edit_original_message(embed=embed)
 
     @commands.slash_command(
-        name="thread", default_member_permissions=disnake.Permissions.all(), guild_ids=[os.getenv("BEP_SERVER")]
+        name="thread", default_member_permissions=disnake.Permissions.all(), guild_ids=[int(os.getenv("BEP_SERVER"))]
     )
     async def thread(self, inter: ApplicationCommandInteraction):
         pass
@@ -406,7 +408,7 @@ class Thread(commands.Cog):
     @commands.Cog.listener("on_thread_create")  # Called each time a new thread is created
     async def thread_create(self, thread: disnake.Thread):
 
-        if thread.guild.id == os.getenv("BEP_SERVER"):
+        if thread.guild.id == int(os.getenv("BEP_SERVER")):
 
             logging.debug(f"[Cog:{self.qualified_name}] [Thread:{thread.name}#{thread.id}] Creation event")
 
@@ -452,7 +454,7 @@ class Thread(commands.Cog):
     @commands.Cog.listener("on_thread_update")
     async def thread_update(self, before: disnake.Thread, after: disnake.Thread):
 
-        if after.guild.id == os.getenv("BEP_SERVER"):
+        if after.guild.id == int(os.getenv("BEP_SERVER")):
 
             logging.debug(f"[Cog:{self.qualified_name}] [Thread:{after.name}#{after.id}] Update event")
 

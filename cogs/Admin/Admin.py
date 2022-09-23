@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import logging
+import os
 from asyncio.exceptions import TimeoutError
 from typing import List
 
@@ -66,7 +67,7 @@ class Admin(commands.Cog):
     @commands.slash_command(
         name="admin",
         default_member_permissions=disnake.Permissions.all(),
-        guild_ids=[281403075506339840, 533360564878180382],
+        guild_ids=[int(os.getenv("BEP_SERVER"))],
     )
     async def admin(self, inter):
         pass
