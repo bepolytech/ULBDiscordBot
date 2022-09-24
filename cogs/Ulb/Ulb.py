@@ -36,19 +36,26 @@ class ULBGuild:
 
 
 class ULBUser:
-    def __init__(self, email: str, *, bep: bool = False, bep_it: bool = False):
-        self.email: str = (email,)
+    def __init__(self, name: str, email: str, *, bep: bool = False, bep_it: bool = False):
+        self.name: str = name
+        self.email: str = email
         self.bep: bool = bep
         self.bep_it: bool = bep_it
 
     def __iter__(self):
+        yield "name", self.name
         yield "email", self.email
         yield "bep", self.bep
         yield "bep_it", self.bep_it
 
     @staticmethod
     def load(data: Dict[str, Union[str, bool]]) -> "ULBUser":
-        return ULBUser(email=str(data.get("email")), bep=data.get("bep"), bep_it=data.get("bep_it"))
+        return ULBUser(
+            name=str(data.get("name")),
+            email=str(data.get("email")),
+            bep=bool(data.get("bep")),
+            bep_it=bool(data.get("bep_it")),
+        )
 
 
 class Ulb(commands.Cog):
@@ -66,6 +73,12 @@ class Ulb(commands.Cog):
         self.ulb_guilds: Dict[disnake.Guild, ULBGuild] = {}
         self.ulb_users: Dict[disnake.User, ULBUser] = {}
         self.emailManager = EmailManager()
+        self.pending_registration_emails: List[str] = []
+        # self.clear_data()
+
+    def clear_data(self):
+        with open(self.data_path, "wb") as json_file:
+            pickle.dump({"ulb_guilds": {}, "ulb_users": {}}, json_file)
 
     @commands.Cog.listener("on_ready")
     async def on_ready(self):
@@ -92,7 +105,7 @@ class Ulb(commands.Cog):
         with open(self.data_path, "wb") as json_file:
             pickle.dump(data, json_file)
 
-    async def register_user(self, *, member: disnake.Member, email: str):
+    async def register_user(self, *, user: disnake.User, name: str, email: str):
         """Add a user with his verified email address to the database
 
         Parameters
@@ -102,11 +115,11 @@ class Ulb(commands.Cog):
         email : `str`
             The verified email address
         """
-        self.ulb_users.setdefault(member, ULBUser(email))
+        self.ulb_users.setdefault(user, ULBUser(name, email))
         self.save_data()
 
         for guild in self.ulb_guilds:
-            member = guild.get_member(member.id)
+            member = guild.get_member(user.id)
             if member:
                 await member.add_roles(self.ulb_guilds.get(guild).role_ulb)
 
@@ -146,6 +159,9 @@ class Ulb(commands.Cog):
         bool
             `True` is the email address is available (no current registered user is associated with it). `False` otherwise
         """
+        if email in self.pending_registration_emails:
+            return False
+        self.pending_registration_emails.append(email)
         for user_data in self.ulb_users.values():
             if user_data.email == email:
                 return False
@@ -170,17 +186,27 @@ class Ulb(commands.Cog):
 
     @commands.slash_command(name="email", description="Vérifier son adresse mail ULB.")
     async def email(self, inter: ApplicationCommandInteraction):
-        if str(inter.user) in self.ulb_users.keys():
+        if inter.user in self.ulb_users.keys():
             await inter.response.send_message(
                 embed=disnake.Embed(
                     title="Vérification de l'addresse mail",
-                    description=f"Tu as déjà associé l'addresse mail suivante : **{self.ulb_users.get(inter.user)}**\nSi ce n'est pas ton addresse mail ULB, contact un membre de {self.bot.ulb_guilds.get(inter.guild).role_bep_it.mention}.",
+                    description=f"Tu as déjà associé l'addresse mail suivante : **{self.ulb_users.get(inter.user).email}**\nSi ce n'est pas ton addresse mail ULB, contact un membre de {self.ulb_guilds.get(inter.guild).role_bep_it.mention if self.ulb_guilds.get(inter.guild) else '**BEP IT**'}.",
                     color=disnake.Colour.dark_orange(),
                 ),
                 ephemeral=True,
             )
         else:
-            await inter.response.send_modal(EmailAddressModal(self))
+            await inter.response.send_message(
+                embed=disnake.Embed(
+                    title=title,
+                    description="Pour accéder aux serveurs du BEP, tu dois spécifier ta vrai identité et vérifier ton addresse email ULB.",
+                    color=disnake.Color.teal(),
+                ).set_footer(
+                    text="Ces données seront utilisées uniquement pour vérifier que tu fais bien partie de l'ULB et ne seront jamais publiées."
+                ),
+                view=RegisterView(self),
+                ephemeral=True,
+            )
 
     @commands.slash_command(name="roles", default_member_permissions=disnake.Permissions.all())
     async def roles(self, inter: ApplicationCommandInteraction):
@@ -259,24 +285,7 @@ class Ulb(commands.Cog):
             self.ulb_users.get(inter.target).bep = True
             self.save_data()
             await inter.response.send_message(
-                embed=disnake.Embed(description=f"{inter.target.mention} à été ajouté au membre du bep"), ephemeral=True
-            )
-            for guild_data in self.ulb_guilds.values():
-                await self.update_member_roles(guild_data, inter.target)
-        else:
-            inter.response.send_message(
-                embed=disnake.Embed(
-                    description=f"{inter.author.mention} n'a pas encore vérifié son addresse email ULB..."
-                )
-            )
-
-    @commands.user_command(name="add to bep IT", default_member_permissions=disnake.Permissions.all())
-    async def add_to_bep(self, inter: disnake.UserCommandInteraction):
-        if inter.target in self.ulb_users.keys():
-            self.ulb_users.get(inter.target).bep_it = True
-            self.save_data()
-            await inter.response.send_message(
-                embed=disnake.Embed(description=f"{inter.target.mention} à été ajouté au membre du bep IT"),
+                embed=disnake.Embed(description=f"{inter.target.mention} à été ajouté aux membres du bep"),
                 ephemeral=True,
             )
             for guild_data in self.ulb_guilds.values():
@@ -285,7 +294,37 @@ class Ulb(commands.Cog):
             inter.response.send_message(
                 embed=disnake.Embed(
                     description=f"{inter.author.mention} n'a pas encore vérifié son addresse email ULB..."
-                )
+                ),
+                ephemeral=True,
+            )
+
+    @commands.user_command(name="add to bep IT", default_member_permissions=disnake.Permissions.all())
+    async def add_to_bep_it(self, inter: disnake.UserCommandInteraction):
+        if inter.target in self.ulb_users.keys():
+            self.ulb_users.get(inter.target).bep_it = True
+            self.save_data()
+            await inter.response.send_message(
+                embed=disnake.Embed(description=f"{inter.target.mention} à été ajouté aux membres du bep IT"),
+                ephemeral=True,
+            )
+            for guild_data in self.ulb_guilds.values():
+                await self.update_member_roles(guild_data, inter.target)
+        else:
+            inter.response.send_message(
+                embed=disnake.Embed(
+                    description=f"{inter.author.mention} n'a pas encore vérifié son addresse email ULB..."
+                ),
+                ephemeral=True,
+            )
+
+    @commands.user_command(name="add to ULB", default_member_permissions=disnake.Permissions.all())
+    async def add_to_ulb(self, inter: disnake.UserCommandInteraction):
+        if inter.target not in self.ulb_users.keys():
+            await inter.response.send_modal(ForceRegisterModal(self, inter.target))
+        else:
+            await inter.response.send_message(
+                embed=disnake.Embed(description=f"{inter.author.mention} à déjà vérifié son addresse email ULB..."),
+                ephemeral=True,
             )
 
 
