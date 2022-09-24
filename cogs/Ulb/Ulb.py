@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+import os
 import pickle
 import secrets
 from typing import Dict
@@ -16,15 +17,17 @@ from bot import Bot
 
 
 class ULBGuild:
-    def __init__(self, *, role_ulb: disnake.Role, role_bep: disnake.Role, role_bep_it: disnake.Role):
+    def __init__(
+        self, *, role_ulb: disnake.Role = None, role_bep: disnake.Role = None, role_bep_it: disnake.Role = None
+    ):
         self.role_ulb: disnake.Role = role_ulb
         self.role_bep: disnake.Role = role_bep
         self.role_bep_it: disnake.Role = role_bep_it
 
     def __iter__(self):
-        yield "role_ulb", self.role_ulb.id
-        yield "role_bep", self.role_bep.id
-        yield "role_bep_it", self.role_bep_it.id
+        yield "role_ulb", self.role_ulb.id if self.role_ulb else None
+        yield "role_bep", self.role_bep.id if self.role_ulb else None
+        yield "role_bep_it", self.role_bep_it.id if self.role_ulb else None
 
     @staticmethod
     def load(guild: disnake.Guild, data: Dict[str, int]) -> "ULBGuild":
@@ -189,21 +192,19 @@ class Ulb(commands.Cog):
         if inter.user in self.ulb_users.keys():
             await inter.response.send_message(
                 embed=disnake.Embed(
-                    title="Vérification de l'addresse mail",
+                    title=title,
                     description=f"Tu as déjà associé l'addresse mail suivante : **{self.ulb_users.get(inter.user).email}**\nSi ce n'est pas ton addresse mail ULB, contact un membre de {self.ulb_guilds.get(inter.guild).role_bep_it.mention if self.ulb_guilds.get(inter.guild) else '**BEP IT**'}.",
                     color=disnake.Colour.dark_orange(),
-                ),
+                ).set_thumbnail(Bot.BEP_image),
                 ephemeral=True,
             )
         else:
             await inter.response.send_message(
                 embed=disnake.Embed(
                     title=title,
-                    description="Pour accéder aux serveurs du BEP, tu dois spécifier ta vrai identité et vérifier ton addresse email ULB.",
+                    description="Ce serveur est réservé aux étudiants de la faculté polytechnique de l'ULB.\nPour accéder à ce serveur, tu dois vérifier ton identité avec ton addresse email **ULB**.",
                     color=disnake.Color.teal(),
-                ).set_footer(
-                    text="Ces données seront utilisées uniquement pour vérifier que tu fais bien partie de l'ULB et ne seront jamais publiées."
-                ),
+                ).set_thumbnail(Bot.BEP_image),
                 view=RegisterView(self),
                 ephemeral=True,
             )
@@ -216,16 +217,25 @@ class Ulb(commands.Cog):
     async def roles_setup(
         self,
         inter: ApplicationCommandInteraction,
-        role_ulb: disnake.Role = commands.Param(description='Le role "ULB"'),
-        role_bep: disnake.Role = commands.Param(description='Le role "BEP"'),
-        role_bep_it: disnake.Role = commands.Param(description='Le role "BEP IT"'),
+        role_ulb: disnake.Role = commands.Param(description='Le role "ULB"', default=None),
+        role_bep: disnake.Role = commands.Param(description='Le role "BEP"', default=None),
+        role_bep_it: disnake.Role = commands.Param(description='Le role "BEP IT"', default=None),
     ):
-        self.ulb_guilds[inter.guild] = ULBGuild(role_ulb=role_ulb, role_bep=role_bep, role_bep_it=role_bep_it)
+        if inter.guild in self.ulb_guilds.keys():
+            guildData = self.ulb_guilds[inter.guild]
+            if role_ulb:
+                guildData.role_ulb = role_ulb
+            if role_bep:
+                guildData.role_bep = role_bep
+            if role_bep_it:
+                guildData.role_bep_it = role_bep_it
+        else:
+            self.ulb_guilds[inter.guild] = ULBGuild(role_ulb=role_ulb, role_bep=role_bep, role_bep_it=role_bep_it)
         self.save_data()
         await inter.response.send_message(
             embed=disnake.Embed(
                 title="Setup des roles du servers",
-                description=f"Role **ULB** : {role_ulb.mention}\nRole **BEP** : {role_bep.mention}\nRole **BEP IT** : {role_bep_it.mention}",
+                description=f"Role **ULB** : {self.ulb_guilds[inter.guild].role_ulb.mention if role_ulb else 'None'}\nRole **BEP** : {self.ulb_guilds[inter.guild].role_bep.mention if role_bep else 'None'}\nRole **BEP IT** : {self.ulb_guilds[inter.guild].role_bep_it.mention if role_bep_it else 'None'}",
             ).set_footer(text='Utilise "/role_update" pour mettre à jour les roles des membres de ce serveur.'),
             ephemeral=True,
         )
@@ -272,9 +282,9 @@ class Ulb(commands.Cog):
                 await member.send(
                     embed=disnake.Embed(
                         title=f"__Bienvenu sur le server **{member.guild.name}**__",
-                        description="""Ce serveur est reservé à la communauté des étudiants de la faculté polytechnique de l'ULB. Pour acceder à ce serveur, tu dois vérifier ton addresse email **ULB** en utilisant la commande "**/email**".""",
+                        description="""Ce serveur est reservé aux étudiants de la faculté polytechnique de l'ULB. Pour acceder à ce serveur, tu dois vérifier ton identité avec ton addresse email **ULB** en utilisant la commande "**/email**".""",
                         color=disnake.Color.teal(),
-                    ).set_thumbnail(url="https://i.imgur.com/BHgic3o.png")
+                    ).set_thumbnail(url=self.bot.BEP_image)
                 )
             else:
                 await self.update_member_roles(self.ulb_guilds.get(member.guild), member)
@@ -326,6 +336,25 @@ class Ulb(commands.Cog):
                 embed=disnake.Embed(description=f"{inter.author.mention} à déjà vérifié son addresse email ULB..."),
                 ephemeral=True,
             )
+
+    @commands.Cog.listener("on_guild_join")
+    async def on_member_join(self, guild: disnake.Guild):
+        template_ids = [t.code for t in await guild.templates()]
+        if os.getenv("GUILD_TEMPLATE_CODE") in template_ids:
+            guildData = ULBGuild()
+            at_least_one_role = False
+            for role in guild.roles:
+                if role.name == "ULB":
+                    guildData.role_ulb = role
+                    at_least_one_role = True
+                if role.name == "BEP":
+                    guildData.role_bep = role
+                    at_least_one_role = True
+                if role.name == "BEP IT":
+                    guildData.role_bep_it = role
+                    at_least_one_role = True
+            if at_least_one_role:
+                self.ulb_guilds[guild] = guildData
 
 
 def setup(bot: commands.InteractionBot):

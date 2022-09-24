@@ -3,6 +3,8 @@ import asyncio
 
 import disnake
 
+from bot import Bot
+
 title = "Vérification de l'identité"
 
 
@@ -30,7 +32,9 @@ class RegisterModal(disnake.ui.Modal):
 
     async def callback(self, interaction: disnake.ModalInteraction) -> None:
         await interaction.response.edit_message(
-            embed=disnake.Embed(title=title, description=f"Vérification en cours...", color=disnake.Color.teal()),
+            embed=disnake.Embed(
+                title=title, description=f"Vérification en cours...", color=disnake.Color.teal()
+            ).set_thumbnail(url=Bot.BEP_image),
             view=self.lastView,
         )
         name: str = f"{interaction.text_values.get('first_name')} {interaction.text_values.get('last_name')}"
@@ -43,7 +47,9 @@ class RegisterModal(disnake.ui.Modal):
                         title=title,
                         description=f"""Un token à été envoyé à l'addresse mail ***{email}***.""",
                         color=disnake.Color.teal(),
-                    ).set_footer(
+                    )
+                    .set_thumbnail(url=Bot.BEP_image)
+                    .set_footer(
                         text=f"""Le token est valide pendant {self.mailCog.token_validity_time//60} minutes, tout comme le bouton sous ce message."""
                     ),
                     view=EmailTokenView(self.mailCog, name, email, token),
@@ -54,7 +60,7 @@ class RegisterModal(disnake.ui.Modal):
                         title=title,
                         description=f"L'addresse mail ***{email}*** est déjà associée à un autre utilisateur.\nSi c'est bien ton addresse mail et que tu penses que quelqu'un aurait eu accès à ton addresse mail et aurait usurpé ton identité sur ce serveur, contact les administrateurs.",
                         color=disnake.Color.red(),
-                    ),
+                    ).set_thumbnail(url=Bot.BEP_image),
                     view=None,
                 )
         else:
@@ -64,7 +70,7 @@ class RegisterModal(disnake.ui.Modal):
                     title=title,
                     description=f"L'addresse mail **{email}** n'est pas une addresse mail valide.\nL'addresse mail doit être ton addesse mail **ULB**.",
                     color=disnake.Color.dark_orange(),
-                ),
+                ).set_thumbnail(url=Bot.BEP_image),
                 view=self.lastView,
             )
 
@@ -103,7 +109,9 @@ class EmailTokenModal(disnake.ui.Modal):
 
     async def callback(self, interaction: disnake.ModalInteraction) -> None:
         await interaction.response.edit_message(
-            embed=disnake.Embed(title=title, description="Vérification en cours...", color=disnake.Color.teal()),
+            embed=disnake.Embed(
+                title=title, description="Vérification en cours...", color=disnake.Color.teal()
+            ).set_thumbnail(url=Bot.BEP_image),
             view=self.lastView,
         )
         await asyncio.sleep(2)
@@ -116,7 +124,7 @@ class EmailTokenModal(disnake.ui.Modal):
                             title=title,
                             description="Ton addresse mail **ULB** est bien vérifiée !",
                             color=disnake.Color.green(),
-                        ),
+                        ).set_thumbnail(url=Bot.BEP_image),
                         view=None,
                     )
                     await self.mailCog.register_user(user=interaction.user, name=self.name, email=self.email)
@@ -126,7 +134,7 @@ class EmailTokenModal(disnake.ui.Modal):
                             title=title,
                             description=f"Tu as déjà associé l'addresse mail suivante : **{self.mailCog.ulb_users.get(interaction.user).email}**\nSi ce n'est pas ton addresse mail ULB, contact les administrateurs du serveur.",
                             color=disnake.Colour.dark_orange(),
-                        ),
+                        ).set_thumbnail(url=Bot.BEP_image),
                         view=None,
                     )
             else:
@@ -135,7 +143,7 @@ class EmailTokenModal(disnake.ui.Modal):
                         title=title,
                         description=f"L'addresse mail ***{self.email}*** est déjà associée à un autre utilisateur.\nSi c'est bien ton addresse mail et que tu penses que quelqu'un aurait eu accès à ton addresse mail et aurait usurpé ton identité sur ce serveur, contact les administrateurs.",
                         color=disnake.Color.red(),
-                    ),
+                    ).set_thumbnail(url=Bot.BEP_image),
                     view=None,
                 )
 
@@ -146,9 +154,11 @@ class EmailTokenModal(disnake.ui.Modal):
                     title=title,
                     description="Token invalide ! Essaye à nouveau.",
                     color=disnake.Color.dark_orange(),
-                ).set_footer(
+                )
+                .set_footer(
                     text=f"""Le token est valide pendant {self.mailCog.token_validity_time//60} minutes, tout comme le bouton sous ce message."""
-                ),
+                )
+                .set_thumbnail(url=Bot.BEP_image),
                 view=self.lastView,
             )
 
@@ -163,6 +173,8 @@ class ForceRegisterModal(RegisterModal):
         email: str = interaction.text_values.get("email")
         await self.mailCog.register_user(user=self.user, name=name, email=email)
         await interaction.response.send_message(
-            embed=disnake.Embed(description=f"{self.user.mention} à bien été ajouter aux membres de l'ULB !"),
+            embed=disnake.Embed(
+                description=f"{self.user.mention} à bien été ajouter aux membres de l'ULB !"
+            ).set_thumbnail(url=Bot.BEP_image),
             ephemeral=True,
         )
