@@ -39,7 +39,7 @@ class Bot(InteractionBot):
 
         if self.test_mode:
             logging.info("Starting in test mod...")
-            super().__init__(intents=intents, test_guilds=[int(os.getenv("TEST_GUILD"))])
+            super().__init__(intents=intents, test_guilds=[int(os.getenv("BEP_SERVER"))])
         else:
             logging.info("Starting in prod mod...")
             super().__init__(intents=intents)
