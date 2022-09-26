@@ -26,38 +26,21 @@ class CallbackModal(disnake.ui.Modal):
         await self.callback_coro(interaction)
 
 
+# TODO real token timeout + number of try
+
+
 class RegistrationForm:
 
     email_domain = "ulb.be"
 
     token_size: int = 10
-    token_validity_time: int = 10 * 60  # In sec
-    timeout_duration = 60 * 10
+    token_validity_time: int = 60 * 1  # In sec
+    timeout_duration = 60 * 1
 
     title = "Vérification de l'identité"
     color = disnake.Colour.dark_blue()
 
     emailManager = EmailManager()
-
-    disclaimer_embed = (
-        disnake.Embed(
-            title=title,
-            description="> Ce serveur est réservé aux étudiants de l'ULB.\n> Pour accéder à ce serveur, tu dois vérifier ton identité avec ton addresse email **ULB**.",
-            color=color,
-        )
-        .set_thumbnail(Bot.BEP_image)
-        .set_footer(text=f"Ce message est valide pendant {timeout_duration//60} minutes.")
-    )
-
-    verification_embed = disnake.Embed(title=title, description=f"Vérification en cours...", color=color).set_thumbnail(
-        url=Bot.BEP_image
-    )
-
-    confirmation_embed = disnake.Embed(
-        title=f"✅ {title}",
-        description="Ton addresse mail **ULB** est bien vérifiée !\nTu as désormais accès aux serveurs **ULB**",
-        color=disnake.Color.green(),
-    ).set_thumbnail(url=Bot.BEP_image)
 
     def __init__(self, target: disnake.User, cog: commands.Cog):
         self.target = target
@@ -67,16 +50,29 @@ class RegistrationForm:
         self.ulb_guilds: Dict[disnake.Guild, disnake.Role] = cog.ulb_guilds
         self.bot: Bot = cog.bot
         self.cog = cog
+        self.email = None
+        self.name = None
+        self.token = None
         self.init_UI()
 
     def init_UI(self):
+        self.registration_embed = (
+            disnake.Embed(
+                title=self.title,
+                description="> Ce serveur est réservé aux étudiants de l'ULB.\n> Pour accéder à ce serveur, tu dois vérifier ton identité avec ton addresse email **ULB**.",
+                color=self.color,
+            )
+            .set_thumbnail(Bot.BEP_image)
+            .set_footer(text=f"Ce message est valide pendant {self.timeout_duration//60} minutes.")
+        )
+
         self.registration_view = disnake.ui.View(timeout=self.timeout_duration)
         self.registration_button = disnake.ui.Button(
             label="Vérifier son identité", emoji="📧", style=disnake.ButtonStyle.primary
         )
         self.registration_button.callback = self.callback_registration_button
         self.registration_view.add_item(self.registration_button)
-        self.registration_view.on_timeout = self.on_timeout
+        self.registration_view.on_timeout = self.stop
 
         self.info_modal = CallbackModal(
             title=self.title,
@@ -89,11 +85,15 @@ class RegistrationForm:
             callback=self.callback_info_modal,
         )
 
+        self.verification_embed = disnake.Embed(
+            title=self.title, description=f"Vérification en cours...", color=self.color
+        ).set_thumbnail(url=Bot.BEP_image)
+
         self.token_view = disnake.ui.View(timeout=self.token_validity_time)
         self.token_button = disnake.ui.Button(label="Entrer le token", emoji="📧", style=disnake.ButtonStyle.primary)
         self.token_button.callback = self.callback_token_button
         self.token_view.add_item(self.token_button)
-        self.token_view.on_timeout = self.on_timeout
+        self.token_view.on_timeout = self.stop
 
         self.token_modal = CallbackModal(
             title=self.title,
@@ -109,6 +109,12 @@ class RegistrationForm:
             ],
             callback=self.callback_token_modal,
         )
+
+        self.confirmation_embed = disnake.Embed(
+            title=f"✅ {self.title}",
+            description="Ton addresse mail **ULB** est bien vérifiée !\nTu as désormais accès aux serveurs **ULB**",
+            color=disnake.Color.green(),
+        ).set_thumbnail(url=Bot.BEP_image)
 
     @property
     def token_embed(self) -> disnake.Embed:
@@ -134,7 +140,6 @@ class RegistrationForm:
                 ).set_thumbnail(Bot.BEP_image)
             )
             return
-            return
 
         if self.target in self.pending_registration_users:
             await inter.edit_original_message(
@@ -147,7 +152,7 @@ class RegistrationForm:
             return
 
         self.pending_registration_users.append(self.target)
-        await inter.edit_original_message(embed=self.disclaimer_embed, view=self.registration_view)
+        await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
 
     async def callback_registration_button(self, inter: disnake.MessageInteraction):
         self.registration_button.disabled = True
@@ -159,44 +164,52 @@ class RegistrationForm:
 
         # Check if email format valid
         splited_mail: List[str] = self.email.split("@")
-        if len(splited_mail) != 2:
+        if (
+            len(splited_mail) != 2
+            or len(splited_mail[0]) == 0
+            or len(splited_mail[1].split(".")) != 2
+            or len(splited_mail[1].split(".")[0]) == 0
+            or splited_mail[1].split(".")[1] == 0
+        ):
             self.registration_button.disabled = False
-            self.disclaimer_embed.clear_fields()
-            self.disclaimer_embed.add_field(
+            self.registration_embed.clear_fields()
+            self.registration_embed.add_field(
                 f"⚠️ **{self.email}** n'est pas une adresse email valide", value="Vérifie l'adresse email et réessaye."
             )
-            await inter.edit_original_message(embed=self.disclaimer_embed, view=self.registration_view)
+            await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
             return
 
         # Check ulb domain
         if splited_mail[1] != self.email_domain:
             self.registration_button.disabled = False
-            self.disclaimer_embed.clear_fields()
-            self.disclaimer_embed.add_field(
+            self.registration_embed.clear_fields()
+            self.registration_embed.add_field(
                 f"⚠️ **{self.email}** n'est pas une adresse email **ULB**",
                 value="Utilise ton adresse email **@ulb.be**.",
             )
-            await inter.edit_original_message(embed=self.disclaimer_embed, view=self.registration_view)
+            await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
             return
 
         for user_data in self.ulb_users.values():
             if user_data.email == self.email:
-                self.disclaimer_embed.clear_fields()
-                self.disclaimer_embed.add_field(
+                self.registration_embed.clear_fields()
+                self.registration_embed.add_field(
                     f"⛔ **{self.email}** est déjà associée à un autre utilisateur discord",
-                    value=f"Si cette adresse email est bien la tienne et que quelqu'un a eu accès à ta boite mail pour se faire passer pour toi, envoie un message à {self.bot.get_user(int(os.getenv('BEP_USER_ID'))) if self.bot.get_user(int(os.getenv('BEP_USER_ID'))) else '@Bureau Etudiant Polytechnique'}.",
+                    value=f"Si cette adresse email est bien la tienne et que quelqu'un a eu accès à ta boite mail pour se faire passer pour toi, envoie un message à {self.bot.get_user(int(os.getenv('BEP_USER_ID'))) if self.bot.get_user(int(os.getenv('BEP_USER_ID'))) else '**@Bureau Etudiant Polytechnique**'}.",
                 )
-                await inter.edit_original_message(embed=self.disclaimer_embed, view=None)
+                await inter.edit_original_message(embed=self.registration_embed, view=None)
+                await self.stop()
                 return
 
         # Check if pending registration for this email
         if self.email in self.pending_registration_emails:
-            self.disclaimer_embed.clear_fields()
-            self.disclaimer_embed.add_field(
+            self.registration_embed.clear_fields()
+            self.registration_embed.add_field(
                 f"⛔  L'adresse email {self.email} est déjà en cours de vérification",
                 value=f"Termine la vérification en cours ou bien attends quelques minutes avant de réessayer.",
             )
-            await inter.edit_original_message(embed=self.disclaimer_embed, view=None)
+            await inter.edit_original_message(embed=self.registration_embed, view=None)
+            await self.stop()
             return
 
         # Valid and available
@@ -251,7 +264,7 @@ class RegistrationForm:
             view=None,
         )
 
-    async def on_timeout(self):
+    async def stop(self):
         try:
             self.pending_registration_users.remove(self.target)
         except ValueError:
