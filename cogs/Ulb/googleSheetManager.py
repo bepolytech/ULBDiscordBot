@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import logging
 import os
 from typing import Tuple
@@ -49,7 +50,7 @@ class GoogleSheetManager:
 
         return (guilds, users)
 
-    def set_user(self, user_id: int, name: str, email: str):
+    async def set_user_task(self, user_id: int, name: str, email: str):
         user_cell: gspread.cell.Cell = self.users.find(str(user_id), in_column=1)
         if user_cell:
             self.users.update_cell(user_cell.row, 2, name)
@@ -57,9 +58,15 @@ class GoogleSheetManager:
         else:
             self.users.append_row(values=[str(user_id), name, email])
 
-    def set_guild(self, guild_id: int, role_id: int):
+    def set_user(self, user_id: int, name: str, email: str):
+        asyncio.create_task(self.set_user_task(user_id, name, email))
+
+    async def set_guild_task(self, guild_id: int, role_id: int):
         guild_cell: gspread.cell.Cell = self.guilds.find(str(guild_id), in_column=1)
         if guild_cell:
             self.guilds.update_cell(guild_cell.row, 2, str(role_id))
         else:
             self.guilds.append_row(values=[str(guild_id), str(role_id)])
+
+    def set_guild(self, guild_id: int, role_id: int):
+        asyncio.create_task(self.set_guild_task(guild_id, role_id))
