@@ -11,7 +11,6 @@ class EmailManager:
     email_addr: str = os.getenv("EMAIL_ADDR")
     port = 465  # For SSL
     auth_token: str = os.getenv("EMAIL_AUTH_TOKEN")
-    email_contact: str = "boscar.vs@gmail.com"
 
     def __init__(self):
         self.context: ssl.SSLContext = ssl.create_default_context()
@@ -31,7 +30,7 @@ class EmailManager:
         <br> Vous recevez ce message car vous avez demandé a lier votre compte discord avec votre addresse mail ULB affin d'accéder aux serveurs du BEP.
         <br>
         <br> Si vous n'êtes pas à l'origine de cette demande, ne tenez pas compte de ce mail.
-        <br> Si vous recevez régulièrement ce type de mail par erreur, veuillez nous <a href="mailto: {self.email_contact}">contacter</a>.
+        <br> Si vous recevez régulièrement ce type de mail par erreur, veuillez nous <a href="mailto: {self.email_addr}">contacter</a>.
     </p>
   </body>
 </html>

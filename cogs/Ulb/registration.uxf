@@ -1,0 +1,48 @@
+<diagram program="umletino" version="15.0.0"><zoom_level>9</zoom_level><help_text></help_text><element><id>UMLState</id><coordinates><x>477</x><y>0</y><w>72</w><h>36</h></coordinates><panel_attributes>Start "/"</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLSpecialState</id><coordinates><x>477</x><y>72</y><w>72</w><h>72</h></coordinates><panel_attributes>type=decision
+user check</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLState</id><coordinates><x>459</x><y>324</y><w>108</w><h>63</h></coordinates><panel_attributes>Form
+--
+- first name
+- last name
+- ULB email address</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLSpecialState</id><coordinates><x>477</x><y>423</y><w>72</w><h>72</h></coordinates><panel_attributes>type=decision
+email check</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLState</id><coordinates><x>477</x><y>180</y><w>72</w><h>36</h></coordinates><panel_attributes>Reserver user</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLState</id><coordinates><x>468</x><y>531</y><w>90</w><h>36</h></coordinates><panel_attributes>Reserver email</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLState</id><coordinates><x>477</x><y>603</y><w>72</w><h>36</h></coordinates><panel_attributes>Send token</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLSpecialState</id><coordinates><x>477</x><y>837</y><w>72</w><h>72</h></coordinates><panel_attributes>type=decision
+token check</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLState</id><coordinates><x>477</x><y>756</y><w>72</w><h>45</h></coordinates><panel_attributes>Form
+--
+- token</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLState</id><coordinates><x>468</x><y>945</y><w>90</w><h>36</h></coordinates><panel_attributes>Add user
+to database</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLState</id><coordinates><x>459</x><y>1089</y><w>108</w><h>63</h></coordinates><panel_attributes>For all guilds
+where member is,
+add ULB role and
+rename</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>504</x><y>27</y><w>27</w><h>63</h></coordinates><panel_attributes>lt=-&gt;</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>Relation</id><coordinates><x>504</x><y>135</y><w>72</w><h>63</h></coordinates><panel_attributes>lt=-&gt;
+Available
+</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>Relation</id><coordinates><x>504</x><y>378</y><w>27</w><h>63</h></coordinates><panel_attributes>lt=-&gt;</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>Relation</id><coordinates><x>504</x><y>486</y><w>108</w><h>63</h></coordinates><panel_attributes>lt=-&gt;
+Valid &amp; available
+</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>Relation</id><coordinates><x>504</x><y>558</y><w>27</w><h>63</h></coordinates><panel_attributes>lt=-&gt;</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>Relation</id><coordinates><x>504</x><y>792</y><w>27</w><h>63</h></coordinates><panel_attributes>lt=-&gt;</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>Relation</id><coordinates><x>504</x><y>900</y><w>45</w><h>63</h></coordinates><panel_attributes>lt=-&gt;
+Valid
+</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>Relation</id><coordinates><x>504</x><y>1044</y><w>27</w><h>63</h></coordinates><panel_attributes>lt=-&gt;</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>UMLState</id><coordinates><x>603</x><y>90</y><w>108</w><h>36</h></coordinates><panel_attributes>Message
+--
+Already registered</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>540</x><y>90</y><w>81</w><h>45</h></coordinates><panel_attributes>lt=-&gt;
+Already
+registered  </panel_attributes><additional_attributes>10;20;70;20</additional_attributes></element><element><id>Relation</id><coordinates><x>540</x><y>441</y><w>81</w><h>36</h></coordinates><panel_attributes>lt=-&gt;
+Invalid   </panel_attributes><additional_attributes>10;20;70;20</additional_attributes></element><element><id>UMLState</id><coordinates><x>603</x><y>432</y><w>90</w><h>63</h></coordinates><panel_attributes>Add field
+--
+Email not valid
+(email format
+or ulb domain)</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLState</id><coordinates><x>477</x><y>252</y><w>72</w><h>36</h></coordinates><panel_attributes>Message
+--
+Disclaimer</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>378</x><y>252</y><w>117</w><h>36</h></coordinates><panel_attributes>lt=-&gt;
+Timeout</panel_attributes><additional_attributes>110;20;10;20</additional_attributes></element><element><id>Relation</id><coordinates><x>504</x><y>279</y><w>27</w><h>63</h></coordinates><panel_attributes>lt=-&gt;</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>Relation</id><coordinates><x>540</x><y>261</y><w>126</w><h>189</h></coordinates><panel_attributes>lt=-&gt;</panel_attributes><additional_attributes>120;190;120;10;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>387</x><y>441</y><w>108</w><h>36</h></coordinates><panel_attributes>lt=-&gt;
+  Used</panel_attributes><additional_attributes>100;20;10;20</additional_attributes></element><element><id>UMLState</id><coordinates><x>288</x><y>441</y><w>108</w><h>36</h></coordinates><panel_attributes>Message
+--
+Email already used</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLState</id><coordinates><x>477</x><y>675</y><w>72</w><h>45</h></coordinates><panel_attributes>Message
+--
+Token sent</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>504</x><y>630</y><w>27</w><h>63</h></coordinates><panel_attributes>lt=-&gt;</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>Relation</id><coordinates><x>504</x><y>711</y><w>27</w><h>63</h></coordinates><panel_attributes>lt=-&gt;</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>Relation</id><coordinates><x>540</x><y>855</y><w>81</w><h>36</h></coordinates><panel_attributes>lt=-&gt;
+Invalid   </panel_attributes><additional_attributes>10;20;70;20</additional_attributes></element><element><id>UMLState</id><coordinates><x>603</x><y>855</y><w>90</w><h>36</h></coordinates><panel_attributes>Add field
+--
+Token not valid</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>540</x><y>693</y><w>126</w><h>180</h></coordinates><panel_attributes>lt=-&gt;</panel_attributes><additional_attributes>120;180;120;10;10;10</additional_attributes></element><element><id>UMLState</id><coordinates><x>468</x><y>1017</y><w>90</w><h>36</h></coordinates><panel_attributes>clear reservation</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>504</x><y>972</y><w>27</w><h>63</h></coordinates><panel_attributes>lt=-&gt;
+</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>Relation</id><coordinates><x>369</x><y>684</y><w>126</w><h>36</h></coordinates><panel_attributes>lt=-&gt;
+ Timeout</panel_attributes><additional_attributes>120;20;10;20</additional_attributes></element><element><id>UMLState</id><coordinates><x>288</x><y>684</y><w>90</w><h>36</h></coordinates><panel_attributes>clear reservation
+(user &amp; email)</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLState</id><coordinates><x>297</x><y>252</y><w>90</w><h>36</h></coordinates><panel_attributes>Clear reservation
+(user)</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>504</x><y>207</y><w>27</w><h>63</h></coordinates><panel_attributes>lt=-&gt;</panel_attributes><additional_attributes>10;10;10;50</additional_attributes></element><element><id>UMLState</id><coordinates><x>288</x><y>90</y><w>108</w><h>36</h></coordinates><panel_attributes>Message
+--
+Registratiion pending</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>387</x><y>90</y><w>108</w><h>45</h></coordinates><panel_attributes>lt=-&gt;
+currently
+      being register</panel_attributes><additional_attributes>100;20;10;20</additional_attributes></element></diagram>

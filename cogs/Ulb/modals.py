@@ -83,7 +83,7 @@ class EmailTokenView(disnake.ui.View):
         self.token: str = token
         super().__init__(timeout=None)
 
-    @disnake.ui.button(label="Entrer le token", emoji="📧")
+    @disnake.ui.button()
     async def token_button(self, button: disnake.ui.Button, interaction: disnake.MessageInteraction):
         button.disabled = True
         await interaction.response.send_modal(EmailTokenModal(self.mailCog, self, self.name, self.email, self.token))
