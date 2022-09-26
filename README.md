@@ -2,4 +2,4 @@
 
 # ULBDiscordBot
 
-This is a small discord bot written in python using the [disnake library](https://github.com/DisnakeDev/disnake), implenting various features for the BEP server.
+This is a small discord bot written in python using the [disnake library](https://github.com/DisnakeDev/disnake) to make a registration system for ULB servers.
