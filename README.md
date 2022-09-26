@@ -1,4 +1,4 @@
-[![CodeFactor](https://www.codefactor.io/repository/github/oscarvsp/bepbot/badge)](https://www.codefactor.io/repository/github/oscarvsp/bepbot)
+[![CodeFactor](https://www.codefactor.io/repository/github/oscarvsp/ulbdiscordbot/badge)](https://www.codefactor.io/repository/github/oscarvsp/ulbdiscordbot)
 
 # ULBDiscordBot
 
