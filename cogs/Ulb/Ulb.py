@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import logging
 import os
-import pickle
 from typing import Dict
 from typing import List
 
@@ -10,10 +10,10 @@ from disnake import ApplicationCommandInteraction
 from disnake.client import HTTPException
 from disnake.ext import commands
 
-from .modals import *
+from .googleSheetManager import GoogleSheetManager
+from .registrationForm import RegistrationForm
 from .ULBUser import ULBUser
 from bot import Bot
-from cogs.Ulb.registrationForm import RegistrationForm
 
 
 class Ulb(commands.Cog):
@@ -23,58 +23,18 @@ class Ulb(commands.Cog):
     def __init__(self, bot: Bot):
         """Initialize the cog"""
         self.bot: Bot = bot
+        self.gc = GoogleSheetManager(bot)
         self.ulb_guilds: Dict[disnake.Guild, disnake.Role] = {}
         self.ulb_users: Dict[disnake.User, ULBUser] = {}
         self.pending_registration_users: List[disnake.User] = []
         self.pending_registration_emails: List[str] = []
         self.data_loaded = False
-        # self.clear_data()
-
-    def clear_data(self):
-        with open(self.data_path, "wb") as json_file:
-            pickle.dump({"ulb_guilds": {}, "ulb_users": {}}, json_file)
 
     @commands.Cog.listener("on_ready")
     async def on_ready(self):
-        with open(self.data_path, "rb") as json_file:
-            logging.debug("Loading data...")
-            data: Dict[str, dict] = pickle.load(json_file)
-
-        ulb_guilds_data: Dict[str, int] = data.get("ulb_guilds")
-        for guild_id, role_id in ulb_guilds_data.items():
-            guild = self.bot.get_guild(int(guild_id))
-            if guild:
-                role = guild.get_role(role_id)
-                if role:
-                    self.ulb_guilds.setdefault(guild, role)
-                    logging.debug(f"Role {role.name}:{role.id} loaded from guild {guild.name}:{guild.id} ")
-                else:
-                    logging.warning(f"Unable to find role from {role_id=} in guild {guild.name}:{guild.id}.")
-            else:
-                logging.warning(f"Unable to find guild from {guild_id=}.")
-
-        ulb_users_data: Dict[str, Dict[str, str]] = data.get("ulb_users")
-        for user_id, user_data in ulb_users_data.items():
-            user = self.bot.get_user(int(user_id))
-            if user:
-                self.ulb_users.setdefault(user, ULBUser(user_data.get("name"), user_data.get("email")))
-                logging.debug(
-                    f"User {user.name}:{user.id} loaded with name={user_data.get('name')} and email={user_data.get('email')}"
-                )
-            else:
-                logging.warning(f"Unable to find user from {user_id=}.")
-
+        (self.ulb_guilds, self.ulb_users) = self.gc.load()
         self.data_loaded = True
         logging.info("ULB data loaded")
-
-    def save_data(self) -> None:
-        """Save the tag_role_map to the json file"""
-        data = {}
-        data.setdefault("ulb_guilds", {str(guild.id): role.id for guild, role in self.ulb_guilds.items()})
-        data.setdefault("ulb_users", {str(user.id): dict(user_data) for user, user_data in self.ulb_users.items()})
-
-        with open(self.data_path, "wb") as json_file:
-            pickle.dump(data, json_file)
 
     async def wait_data(self) -> None:
         while self.data_loaded == False:
@@ -102,8 +62,8 @@ class Ulb(commands.Cog):
             logging.debug("Waiting for data to be loaded.")
             await self.wait_data()
 
+        self.gc.set_guild(inter.guild.id, role_ulb.id)
         self.ulb_guilds[inter.guild] = role_ulb
-        self.save_data()
 
         embed = disnake.Embed(
             title="Setup du role ULB du servers",
@@ -122,6 +82,8 @@ class Ulb(commands.Cog):
                 value=" et ".join(roles_warning)
                 + " ont la permission de changer leur propre pseudo.\nRetirez ces permissions si vous voulez que les membres soit obligés de garder leur vrai nom.",
             )
+
+        # TODO add bot role permissions to tell which role it can edit nick
 
         await inter.edit_original_message(embed=embed)
 

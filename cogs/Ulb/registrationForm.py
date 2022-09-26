@@ -13,6 +13,7 @@ from disnake.ext import commands
 from .emailManager import EmailManager
 from .ULBUser import ULBUser
 from bot import Bot
+from cogs.Ulb.googleSheetManager import GoogleSheetManager
 
 
 class CallbackModal(disnake.ui.Modal):
@@ -49,6 +50,7 @@ class RegistrationForm:
         self.ulb_users: Dict[disnake.User, ULBUser] = cog.ulb_users
         self.ulb_guilds: Dict[disnake.Guild, disnake.Role] = cog.ulb_guilds
         self.bot: Bot = cog.bot
+        self.gc: GoogleSheetManager = cog.gc
         self.cog = cog
         self.email = None
         self.name = None
@@ -240,8 +242,8 @@ class RegistrationForm:
             return
 
         name = " ".join([name.title() for name in self.email.split("@")[0].split(".")])
+        self.gc.set_user(self.target.id, name, self.email)
         self.ulb_users.setdefault(self.target, ULBUser(name, self.email))
-        self.cog.save_data()
         self.pending_registration_emails.remove(self.email)
         self.pending_registration_users.remove(self.target)
 
