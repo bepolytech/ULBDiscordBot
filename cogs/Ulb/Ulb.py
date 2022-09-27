@@ -17,9 +17,6 @@ from bot import Bot
 
 
 class Ulb(commands.Cog):
-
-    data_path: str = "cogs/Ulb/data.json"
-
     def __init__(self, bot: Bot):
         """Initialize the cog"""
         self.bot: Bot = bot
