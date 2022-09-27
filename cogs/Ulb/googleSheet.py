@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import json
 import logging
 import os
 from typing import Dict, Tuple
@@ -9,13 +10,16 @@ import disnake
 
 from .ULBUser import ULBUser
 from bot import Bot
-
+from oauth2client.service_account import ServiceAccountCredentials
 
 class GoogleSheetManager:
     
-    sheet = gspread.service_account(filename="cogs/ULB/google_sheet_cred.json").open_by_url(
-            os.getenv("GOOGLE_SHEET_URL")
-        )
+    scope = ['https://spreadsheets.google.com/feeds',
+         'https://www.googleapis.com/auth/drive']
+    data = json.load(open("cogs/Ulb/google_sheet_cred.json", 'rb'))
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(data, scope)
+    client = gspread.authorize(creds)
+    sheet = client.open_by_url(os.getenv("GOOGLE_SHEET_URL"))
     users = sheet.worksheet("users")
     guilds = sheet.worksheet("guilds")
     

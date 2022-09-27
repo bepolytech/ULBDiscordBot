@@ -10,7 +10,7 @@ from disnake import ApplicationCommandInteraction
 from disnake.client import HTTPException
 from disnake.ext import commands
 
-from .googleSheetManager import GoogleSheetManager
+from .googleSheet import GoogleSheetManager
 from .registrationForm import RegistrationForm
 from .ULBUser import ULBUser
 from bot import Bot
@@ -30,7 +30,7 @@ class Ulb(commands.Cog):
 
     @commands.Cog.listener("on_ready")
     async def on_ready(self):
-        (self.ulb_guilds, self.ulb_users) = GoogleSheetManager.load()
+        (self.ulb_guilds, self.ulb_users) = GoogleSheetManager.load(self.bot)
         RegistrationForm.setup(self)
         logging.info("ULB data loaded")
 

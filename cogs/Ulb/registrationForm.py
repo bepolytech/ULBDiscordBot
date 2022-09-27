@@ -10,10 +10,10 @@ import disnake
 from disnake.client import HTTPException
 from disnake.ext import commands
 
-from .emailManager import EmailManager
+from .email import EmailManager
 from .ULBUser import ULBUser
 from bot import Bot
-from cogs.Ulb.googleSheetManager import GoogleSheetManager
+from cogs.Ulb.googleSheet import GoogleSheetManager
 
 
 class CallbackModal(disnake.ui.Modal):
