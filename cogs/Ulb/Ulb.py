@@ -23,31 +23,39 @@ class Ulb(commands.Cog):
     def __init__(self, bot: Bot):
         """Initialize the cog"""
         self.bot: Bot = bot
-        self.gc = GoogleSheetManager(bot)
         self.ulb_guilds: Dict[disnake.Guild, disnake.Role] = {}
         self.ulb_users: Dict[disnake.User, ULBUser] = {}
         self.pending_registration_users: List[disnake.User] = []
         self.pending_registration_emails: List[str] = []
-        self.data_loaded = False
 
     @commands.Cog.listener("on_ready")
     async def on_ready(self):
-        (self.ulb_guilds, self.ulb_users) = self.gc.load()
-        self.data_loaded = True
+        (self.ulb_guilds, self.ulb_users) = GoogleSheetManager.load()
+        RegistrationForm.setup(self)
         logging.info("ULB data loaded")
 
     async def wait_data(self) -> None:
-        while self.data_loaded == False:
+        if not GoogleSheetManager.loaded:
+            logging.debug("Waiting for data to be load from google sheet...")
+            await asyncio.sleep(1)
+        while not GoogleSheetManager.loaded:
+            await asyncio.sleep(1)
+            
+    async def wait_setup(self) -> None:
+        if not GoogleSheetManager.loaded:
+            await self.wait_data()
+        if not RegistrationForm.set:
+            logging.debug("Waiting for registrationForm to be set...")
+            await asyncio.sleep(1)
+        while not RegistrationForm.set:
             await asyncio.sleep(1)
 
     @commands.slash_command(name="email", description="Vérifier son adresse mail ULB.")
     async def email(self, inter: ApplicationCommandInteraction):
         await inter.response.defer(ephemeral=True)
-        if not self.data_loaded:
-            logging.debug("Waiting for data to be loaded.")
-            await self.wait_data()
-        form = RegistrationForm(inter.user, self)
-        await form.start(inter)
+        await self.wait_setup()
+        
+        await RegistrationForm.new(inter)
 
     @commands.slash_command(name="role", default_member_permissions=disnake.Permissions.all())
     async def roles(self, inter: ApplicationCommandInteraction):
@@ -58,11 +66,9 @@ class Ulb(commands.Cog):
         self, inter: ApplicationCommandInteraction, role_ulb: disnake.Role = commands.Param(description='Le role "ULB"')
     ):
         await inter.response.defer(ephemeral=True)
-        if not self.data_loaded:
-            logging.debug("Waiting for data to be loaded.")
-            await self.wait_data()
+        await self.wait_data()
 
-        self.gc.set_guild(inter.guild.id, role_ulb.id)
+        GoogleSheetManager.set_guild(inter.guild.id, role_ulb.id)
         self.ulb_guilds[inter.guild] = role_ulb
 
         embed = disnake.Embed(
@@ -93,9 +99,8 @@ class Ulb(commands.Cog):
     )
     async def roles_update(self, inter: ApplicationCommandInteraction):
         await inter.response.defer(ephemeral=True)
-        if not self.data_loaded:
-            logging.debug("Waiting for data to be loaded.")
-            await self.wait_data()
+        await self.wait_data()
+
 
         if inter.guild not in self.ulb_guilds.keys():
             await inter.edit_original_message(
@@ -140,9 +145,8 @@ class Ulb(commands.Cog):
 
     @commands.Cog.listener("on_member_join")
     async def on_member_join(self, member: disnake.Member):
-        if not self.data_loaded:
-            logging.debug("Waiting for data to be loaded.")
-            await self.wait_data()
+        await self.wait_data()
+
 
         # Either ask to register, or autmotically add role and real name for user joining ulb guild
         if member.guild in self.ulb_guilds.keys():

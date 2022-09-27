@@ -40,24 +40,71 @@ class RegistrationForm:
 
     title = "Vérification de l'identité"
     color = disnake.Colour.dark_blue()
+    
+    ulb_users: Dict[disnake.User, ULBUser] = None
+    ulb_guilds: Dict[disnake.Guild, disnake.Role] = None
+    pending_registration_emails: List[str]  = None
+    pending_registration_users: List[disnake.User] = None
+    contact_user: disnake.User = None
+    set = False
+    
+    @classmethod
+    def setup(cls, cog: commands.Cog):
+        """Setup the RegistrationForm class
 
-    emailManager = EmailManager()
+        Parameters
+        ----------
+        cog : Ulb
+            The Ulb cog (with data loaded from googl sheet first)
 
-    def __init__(self, target: disnake.User, cog: commands.Cog):
+        Raises
+        ------
+        `AttributeError`
+            Raise if the Ulb cog data has not been load yet.
+        """
+        if GoogleSheetManager.loaded == False:
+            logging.error("You have to load data from google sheet before calling setup for the RegistrationForm class")
+            raise AttributeError
+        cls.ulb_users = cog.ulb_users
+        cls.ulb_guilds = cog.ulb_guilds
+        cls.pending_registration_emails = cog.pending_registration_emails
+        cls.pending_registration_users = cog.pending_registration_users
+        cls.contact_user = cog.bot.get_user(int(os.getenv('BEP_USER_ID')))
+        cls.set = True
+        
+    @classmethod
+    async def new(cls, inter: disnake.ApplicationCommandInteraction, target: disnake.User = None):
+        """Followup response to an interaction by creating and sending a registrationForm for the target user.
+
+        Parameters
+        ----------
+        inter : `disnake.ApplicationCommandInteraction`
+            The interaction to response to. This has to been reponse before since the registration form will user followup response
+        target : `Optional[disnake.User]`
+            The user to register. If `None`, then the inter.author is used.
+
+        Raises
+        ------
+        `AttributeError`
+            Raise if the RegistrationForm has not been setup yet
+        """
+        if not cls.set:
+            logging.error("RegistrationForm need to be 'setup' before being called")
+            raise AttributeError
+        if not target:
+            target = inter.author
+        new_form = RegistrationForm(target)
+        await new_form._send(inter)
+        
+
+    def __init__(self, target: disnake.User):
         self.target = target
-        self.pending_registration_users: List[disnake.User] = cog.pending_registration_users
-        self.pending_registration_emails: List[str] = cog.pending_registration_emails
-        self.ulb_users: Dict[disnake.User, ULBUser] = cog.ulb_users
-        self.ulb_guilds: Dict[disnake.Guild, disnake.Role] = cog.ulb_guilds
-        self.bot: Bot = cog.bot
-        self.gc: GoogleSheetManager = cog.gc
-        self.cog = cog
         self.email = None
         self.name = None
         self.token = None
-        self.init_UI()
+        self._init_UI()
 
-    def init_UI(self):
+    def _init_UI(self):
         self.registration_embed = (
             disnake.Embed(
                 title=self.title,
@@ -72,9 +119,9 @@ class RegistrationForm:
         self.registration_button = disnake.ui.Button(
             label="Vérifier son identité", emoji="📧", style=disnake.ButtonStyle.primary
         )
-        self.registration_button.callback = self.callback_registration_button
+        self.registration_button.callback = self._callback_registration_button
         self.registration_view.add_item(self.registration_button)
-        self.registration_view.on_timeout = self.stop
+        self.registration_view.on_timeout = self._stop
 
         self.info_modal = CallbackModal(
             title=self.title,
@@ -84,7 +131,7 @@ class RegistrationForm:
                     label="Addresse mail ULB (@ulb.be) :", custom_id="email", placeholder="ex : t.verhaegen@ulb.be"
                 ),
             ],
-            callback=self.callback_info_modal,
+            callback=self._callback_info_modal,
         )
 
         self.verification_embed = disnake.Embed(
@@ -93,9 +140,9 @@ class RegistrationForm:
 
         self.token_view = disnake.ui.View(timeout=self.token_validity_time)
         self.token_button = disnake.ui.Button(label="Entrer le token", emoji="📧", style=disnake.ButtonStyle.primary)
-        self.token_button.callback = self.callback_token_button
+        self.token_button.callback = self._callback_token_button
         self.token_view.add_item(self.token_button)
-        self.token_view.on_timeout = self.stop
+        self.token_view.on_timeout = self._stop
 
         self.token_modal = CallbackModal(
             title=self.title,
@@ -109,7 +156,7 @@ class RegistrationForm:
                     max_length=self.token_size,
                 )
             ],
-            callback=self.callback_token_modal,
+            callback=self._callback_token_modal,
         )
 
         self.confirmation_embed = disnake.Embed(
@@ -119,7 +166,7 @@ class RegistrationForm:
         ).set_thumbnail(url=Bot.BEP_image)
 
     @property
-    def token_embed(self) -> disnake.Embed:
+    def _token_embed(self) -> disnake.Embed:
         return (
             disnake.Embed(
                 title=self.title,
@@ -132,7 +179,7 @@ class RegistrationForm:
             )
         )
 
-    async def start(self, inter: disnake.ApplicationCommandInteraction):
+    async def _send(self, inter: disnake.ApplicationCommandInteraction):
         if self.target in self.ulb_users.keys():
             await inter.edit_original_message(
                 embed=disnake.Embed(
@@ -156,15 +203,15 @@ class RegistrationForm:
         self.pending_registration_users.append(self.target)
         await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
 
-    async def callback_registration_button(self, inter: disnake.MessageInteraction):
+    async def _callback_registration_button(self, inter: disnake.MessageInteraction):
         self.registration_button.disabled = True
         await inter.response.send_modal(self.info_modal)
 
-    async def callback_info_modal(self, inter: disnake.ModalInteraction):
+    async def _callback_info_modal(self, inter: disnake.ModalInteraction):
         await inter.response.edit_message(embed=self.verification_embed, view=self.registration_view)
         self.email = inter.text_values.get("email")
 
-        # Check if email format valid
+        # Check email format validity
         splited_mail: List[str] = self.email.split("@")
         if (
             len(splited_mail) != 2
@@ -181,7 +228,7 @@ class RegistrationForm:
             await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
             return
 
-        # Check ulb domain
+        # Check email domain validity
         if splited_mail[1] != self.email_domain:
             self.registration_button.disabled = False
             self.registration_embed.clear_fields()
@@ -192,6 +239,7 @@ class RegistrationForm:
             await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
             return
 
+        #Check email available
         for user_data in self.ulb_users.values():
             if user_data.email == self.email:
                 self.registration_embed.clear_fields()
@@ -200,7 +248,7 @@ class RegistrationForm:
                     value=f"Si cette adresse email est bien la tienne et que quelqu'un a eu accès à ta boite mail pour se faire passer pour toi, envoie un message à {self.bot.get_user(int(os.getenv('BEP_USER_ID'))) if self.bot.get_user(int(os.getenv('BEP_USER_ID'))) else '**@Bureau Etudiant Polytechnique**'}.",
                 )
                 await inter.edit_original_message(embed=self.registration_embed, view=None)
-                await self.stop()
+                await self._stop()
                 return
 
         # Check if pending registration for this email
@@ -211,38 +259,36 @@ class RegistrationForm:
                 value=f"Termine la vérification en cours ou bien attends quelques minutes avant de réessayer.",
             )
             await inter.edit_original_message(embed=self.registration_embed, view=None)
-            await self.stop()
+            await self._stop()
             return
 
         # Valid and available
         self.pending_registration_emails.append(self.email)
         self.token = secrets.token_hex(self.token_size)[: self.token_size]
-        print(self.token)
-        await inter.edit_original_message(embed=self.token_embed, view=self.token_view)
-        self.emailManager.sendToken(self.email, self.token)
+        await inter.edit_original_message(embed=self._token_embed, view=self.token_view)
+        EmailManager.sendToken(self.email, self.token)
 
-    async def callback_token_button(self, inter: disnake.MessageInteraction):
+    async def _callback_token_button(self, inter: disnake.MessageInteraction):
         self.token_button.disabled = True
         await inter.response.send_modal(self.token_modal)
 
-    async def callback_token_modal(self, inter: disnake.ModalInteraction):
+    async def _callback_token_modal(self, inter: disnake.ModalInteraction):
         await inter.response.edit_message(embed=self.verification_embed, view=self.token_view)
         token = inter.text_values.get("token")
         if token != self.token:
             self.token_button.disabled = False
-            self.token_embed.clear_fields()
-            self.token_embed.add_field(
+            self._token_embed.add_field(
                 name="⚠️ Token invalide !",
                 value="Si tu as fait plusieurs tentative de vérification, utilise bien le dernier token que tu as reçu.",
             )
             await inter.edit_original_message(
-                embed=self.token_embed,
+                embed=self._token_embed,
                 view=self.token_view,
             )
             return
 
         name = " ".join([name.title() for name in self.email.split("@")[0].split(".")])
-        self.gc.set_user(self.target.id, name, self.email)
+        GoogleSheetManager.set_user(self.target.id, name, self.email)
         self.ulb_users.setdefault(self.target, ULBUser(name, self.email))
         self.pending_registration_emails.remove(self.email)
         self.pending_registration_users.remove(self.target)
@@ -266,7 +312,7 @@ class RegistrationForm:
             view=None,
         )
 
-    async def stop(self):
+    async def _stop(self):
         try:
             self.pending_registration_users.remove(self.target)
         except ValueError:
