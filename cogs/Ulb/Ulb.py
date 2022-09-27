@@ -40,7 +40,7 @@ class Ulb(commands.Cog):
             await asyncio.sleep(1)
         while not GoogleSheetManager.loaded:
             await asyncio.sleep(1)
-            
+
     async def wait_setup(self) -> None:
         if not GoogleSheetManager.loaded:
             await self.wait_data()
@@ -54,7 +54,7 @@ class Ulb(commands.Cog):
     async def email(self, inter: ApplicationCommandInteraction):
         await inter.response.defer(ephemeral=True)
         await self.wait_setup()
-        
+
         await RegistrationForm.new(inter)
 
     @commands.slash_command(name="role", default_member_permissions=disnake.Permissions.all())
@@ -101,7 +101,6 @@ class Ulb(commands.Cog):
         await inter.response.defer(ephemeral=True)
         await self.wait_data()
 
-
         if inter.guild not in self.ulb_guilds.keys():
             await inter.edit_original_message(
                 embed=disnake.Embed(
@@ -146,7 +145,6 @@ class Ulb(commands.Cog):
     @commands.Cog.listener("on_member_join")
     async def on_member_join(self, member: disnake.Member):
         await self.wait_data()
-
 
         # Either ask to register, or autmotically add role and real name for user joining ulb guild
         if member.guild in self.ulb_guilds.keys():

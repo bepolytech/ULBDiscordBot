@@ -40,14 +40,14 @@ class RegistrationForm:
 
     title = "Vérification de l'identité"
     color = disnake.Colour.dark_blue()
-    
+
     ulb_users: Dict[disnake.User, ULBUser] = None
     ulb_guilds: Dict[disnake.Guild, disnake.Role] = None
-    pending_registration_emails: List[str]  = None
+    pending_registration_emails: List[str] = None
     pending_registration_users: List[disnake.User] = None
     contact_user: disnake.User = None
     set = False
-    
+
     @classmethod
     def setup(cls, cog: commands.Cog):
         """Setup the RegistrationForm class
@@ -69,9 +69,9 @@ class RegistrationForm:
         cls.ulb_guilds = cog.ulb_guilds
         cls.pending_registration_emails = cog.pending_registration_emails
         cls.pending_registration_users = cog.pending_registration_users
-        cls.contact_user = cog.bot.get_user(int(os.getenv('BEP_USER_ID')))
+        cls.contact_user = cog.bot.get_user(int(os.getenv("BEP_USER_ID")))
         cls.set = True
-        
+
     @classmethod
     async def new(cls, inter: disnake.ApplicationCommandInteraction, target: disnake.User = None):
         """Followup response to an interaction by creating and sending a registrationForm for the target user.
@@ -95,7 +95,6 @@ class RegistrationForm:
             target = inter.author
         new_form = RegistrationForm(target)
         await new_form._send(inter)
-        
 
     def __init__(self, target: disnake.User):
         self.target = target
@@ -239,7 +238,7 @@ class RegistrationForm:
             await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
             return
 
-        #Check email available
+        # Check email available
         for user_data in self.ulb_users.values():
             if user_data.email == self.email:
                 self.registration_embed.clear_fields()

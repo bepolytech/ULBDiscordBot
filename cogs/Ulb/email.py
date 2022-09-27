@@ -14,7 +14,7 @@ class EmailManager:
     context: ssl.SSLContext = ssl.create_default_context()
 
     @classmethod
-    def content(cls,target_email: str, token: str):
+    def content(cls, target_email: str, token: str):
         msg = MIMEMultipart("alternative")
         msg["Subject"] = "Discord - ULB email adresse vérification"
         msg["From"] = cls.email_addr
