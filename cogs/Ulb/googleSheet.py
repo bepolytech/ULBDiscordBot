@@ -14,13 +14,52 @@ from .ulbUser import UlbUser
 from bot import Bot
 
 
+class GoogleSheetManagerNotLoadedError(Exception):
+    """The Exception to be raise when the GoogleSheetManager class is used without have been loaded."""
+
+    def __init__(self, *args: object) -> None:
+        super().__init__("The GoogleSheetManager class need to be loaded with 'load()' before being used !")
+
+
+class GoogleSheetInstantiationError(Exception):
+    """The Exception to be raise when the GoogleSheetManager class is instantiated."""
+
+    def __init__(self, *args: object) -> None:
+        super().__init__("The GoogleSheetManager class cannot be instantiated, but only used as a class.")
+
+
 class GoogleSheetManager:
+    """Represent the GoogleSheetManager.
 
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    This class is only used as a class and should not be instantiated
 
-    users_ws: gspread.Worksheet = None
-    guilds_ws: gspread.Worksheet = None
-    loaded = False
+    Properties
+    ----------
+    loaded: `bool`
+        `True` if the class has been loaded. `False` otherwise
+
+    Classmethods
+    ------------
+    load(bot: Bot):
+        Load the GoogleSheet data. This need to be called before using the other methods
+    set_user(user_id: `int`, name: `str`, email: `str`):
+        Add or update an user to the database
+    set_guild(guild_id: `int`, role_id: `int`):
+        Add or update an guild to the database
+    """
+
+    _scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+
+    _users_ws: gspread.Worksheet = None
+    _guilds_ws: gspread.Worksheet = None
+    _loaded = False
+
+    def __init__(self) -> None:
+        raise GoogleSheetInstantiationError
+
+    @property
+    def loaded(cls) -> bool:
+        return cls._loaded
 
     @classmethod
     def load(cls, bot: Bot) -> Tuple[Dict[disnake.Guild, disnake.Role], Dict[disnake.User, UlbUser]]:
@@ -34,7 +73,7 @@ class GoogleSheetManager:
             - Users: `Dict[disnake.User, UlbUser]]`
         """
         cred_dict = json.load(open("cogs/Ulb/google_sheet_cred.json", "rb"))
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(cred_dict, cls.scope)
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(cred_dict, cls._scope)
         client = gspread.authorize(creds)
         sheet = client.open_by_url(os.getenv("GOOGLE_SHEET_URL"))
         cls.users_ws = sheet.worksheet("users")
@@ -42,6 +81,7 @@ class GoogleSheetManager:
 
         logging.info("[GoogleSheet] Google sheet opened. Loading data...")
 
+        # Load guilds
         guilds = {}
         for guild_data in cls.guilds_ws.get_all_records():
             guild = bot.get_guild(guild_data.get("guild_id", int))
@@ -60,6 +100,7 @@ class GoogleSheetManager:
                 logging.warning(f"[GoogleSheet] Not able to find guild from id={guild_data.get('guild_id', int)}.")
         logging.info(f"[GoogleSheet] Found {len(guilds)} guilds.")
 
+        # Load users
         users = {}
         for user_data in cls.users_ws.get_all_records():
             user = bot.get_user(user_data.get("user_id", int))
@@ -71,11 +112,23 @@ class GoogleSheetManager:
             else:
                 logging.warning(f"[GoogleSheet] Not able to find user from id={user_data.get('user_id',int)}.")
         logging.info(f"[GoogleSheet] Found {len(users)} users.")
-        cls.loaded = True
+
+        cls._loaded = True
         return (guilds, users)
 
     @classmethod
     async def _set_user_task(cls, user_id: int, name: str, email: str):
+        """Coroutine task called by `set_user()` to add or update ulb user informations on the google sheet
+
+        Parameters
+        ----------
+        user_id : `int`
+            The user id
+        name : `str`
+            The name
+        email : `str`
+            The email address
+        """
         user_cell: gspread.cell.Cell = cls.users_ws.find(str(user_id), in_column=1)
         await asyncio.sleep(0.1)
         if user_cell:
@@ -108,6 +161,17 @@ class GoogleSheetManager:
 
     @classmethod
     async def _set_guild_task(cls, guild_id: int, role_id: int):
+        """Coroutine task called by `set_guilds()` to add or update ulb guild informations on the google sheet.
+
+        It create a task without waiting for it to end, in order to not decrease the global performance of the Bot.
+
+        Parameters
+        ----------
+        guild_id : `int`
+            Guild id
+        role_id : `int`
+            Ulb Role id
+        """
         guild_cell: gspread.cell.Cell = cls.guilds_ws.find(str(guild_id), in_column=1)
         await asyncio.sleep(0.1)
         if guild_cell:

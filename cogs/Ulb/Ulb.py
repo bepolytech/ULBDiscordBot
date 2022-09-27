@@ -29,6 +29,7 @@ class Ulb(commands.Cog):
         logging.info("[Cog:Ulb] Ready")
 
     async def wait_data(self) -> None:
+        """Async sleep until GoogleSheet is loaded"""
         if not GoogleSheetManager.loaded:
             logging.debug("[Cog:Ulb] Waiting for data to be load from google sheet...")
             await asyncio.sleep(1)
@@ -36,6 +37,7 @@ class Ulb(commands.Cog):
             await asyncio.sleep(1)
 
     async def wait_setup(self) -> None:
+        """Async sleep until GoogleSheet is loaded and RegistrationForm is set"""
         if not GoogleSheetManager.loaded:
             await self.wait_data()
         if not RegistrationForm.set:
@@ -83,7 +85,7 @@ class Ulb(commands.Cog):
                 value=" et ".join(roles_warning)
                 + " ont la permission de changer leur propre pseudo.\nRetirez ces permissions si vous voulez que les membres soit obligés de garder leur vrai nom.",
             )
-
+        # Add warning if the role order does not allow the bot to edit the nickname of @ulb
         if inter.me.top_role <= role_ulb:
             embed.add_field(
                 name="⚠️",
@@ -107,7 +109,7 @@ class Ulb(commands.Cog):
                     color=disnake.Color.orange(),
                 )
             )
-
+        # Update the server
         ulb_role = self.ulb_guilds.get(inter.guild)
         if ulb_role:
             for member in inter.guild.members:
