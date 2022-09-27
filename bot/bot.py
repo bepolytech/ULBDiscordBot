@@ -65,7 +65,6 @@ class Bot(InteractionBot):
         """
         self.log_channel = self.get_channel(int(os.getenv("LOG_CHANNEL")))
         logging.info("-" * 50)
-        logging.info("-" * 50)
         logging.info(f"| Logged in as {self.user.name}")
         logging.info(f"| disnake API version: {disnake.__version__}")
         logging.info(f"| Python version: {platform.python_version()}")
@@ -73,7 +72,7 @@ class Bot(InteractionBot):
         logging.info(f"| Owner : {self.owner}")
         logging.info(f"| Cogs loaded : " + ", ".join([f"{cog}" for cog in self.cogs.keys()]))
         if self.cog_not_loaded:
-            logging.info("| Cogs not loaded (see error above): " + ", ".join(self.cog_not_loaded))
+            logging.info("| /!\ Cogs not loaded (see error above): " + ", ".join(self.cog_not_loaded))
         logging.info(f"| Bot Ready !")
         logging.info("-" * 50)
 
@@ -115,17 +114,17 @@ class Bot(InteractionBot):
         await self.log_channel.send(embed=disnake.Embed(description=f"```python\n{tb[4050*n:]}```"))
 
     async def on_slash_command(self, interaction: disnake.ApplicationCommandInteraction) -> None:
-        logging.info(
+        logging.debug(
             f"Slash command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' started..."
         )
 
     async def on_user_command(self, interaction: disnake.UserCommandInteraction) -> None:
-        logging.info(
+        logging.debug(
             f"User command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' started..."
         )
 
     async def on_message_command(self, interaction: disnake.MessageCommandInteraction) -> None:
-        logging.info(
+        logging.debug(
             f"Message command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' started..."
         )
 
@@ -139,16 +138,16 @@ class Bot(InteractionBot):
         await self.send_error_log(interaction, error)
 
     async def on_slash_command_completion(self, interaction: disnake.ApplicationCommandInteraction) -> None:
-        logging.info(
+        logging.debug(
             f"Slash command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' at '{interaction.created_at}' ended normally"
         )
 
     async def on_user_command_completion(self, interaction: disnake.UserCommandInteraction) -> None:
-        logging.info(
+        logging.debug(
             f"User command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' at '{interaction.created_at}' ended normally"
         )
 
     async def on_message_command_completion(self, interaction: disnake.MessageCommandInteraction) -> None:
-        logging.info(
+        logging.debug(
             f"Message command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' at '{interaction.created_at}' ended normally"
         )

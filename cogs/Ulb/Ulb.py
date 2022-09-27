@@ -3,7 +3,6 @@ import asyncio
 import logging
 import os
 from typing import Dict
-from typing import List
 
 import disnake
 from disnake import ApplicationCommandInteraction
@@ -22,8 +21,6 @@ class Ulb(commands.Cog):
         self.bot: Bot = bot
         self.ulb_guilds: Dict[disnake.Guild, disnake.Role] = {}
         self.ulb_users: Dict[disnake.User, UlbUser] = {}
-        self.pending_registration_users: List[disnake.User] = []
-        self.pending_registration_emails: List[str] = []
 
     @commands.Cog.listener("on_ready")
     async def on_ready(self):

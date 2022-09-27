@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import logging
 import os
 import secrets
@@ -27,24 +28,22 @@ class CallbackModal(disnake.ui.Modal):
         await self.callback_coro(interaction)
 
 
-# TODO real token timeout + number of try
-
-
 class RegistrationForm:
 
     email_domain = "ulb.be"
 
-    token_size: int = 10
-    token_validity_time: int = 60 * 5  # In sec
+    token_size = 10
+    token_validity_time = 60 * 10  # In sec
     timeout_duration = 60 * 10
+    token_nbr_try = 2
 
     title = "Vérification de l'identité"
     color = disnake.Colour.dark_blue()
 
     ulb_users: Dict[disnake.User, UlbUser] = None
     ulb_guilds: Dict[disnake.Guild, disnake.Role] = None
-    pending_registration_emails: List[str] = None
-    pending_registration_users: List[disnake.User] = None
+    pending_registration_emails: List[str] = []
+    pending_registration_users: List[disnake.User] = []
     contact_user: disnake.User = None
     set = False
 
@@ -69,8 +68,6 @@ class RegistrationForm:
             raise AttributeError
         cls.ulb_users = cog.ulb_users
         cls.ulb_guilds = cog.ulb_guilds
-        cls.pending_registration_emails = cog.pending_registration_emails
-        cls.pending_registration_users = cog.pending_registration_users
         cls.contact_user = cog.bot.get_user(int(os.getenv("BEP_USER_ID")))
         cls.set = True
 
@@ -96,7 +93,6 @@ class RegistrationForm:
         if not target:
             target = inter.author
         new_form = RegistrationForm(target)
-        logging.debug(f"[RegistrationForm] [User:{target.id}] Created.")
         await new_form._send(inter)
 
     def __init__(self, target: disnake.User):
@@ -104,6 +100,7 @@ class RegistrationForm:
         self.email = None
         self.name = None
         self.token = None
+        self.nbr_try = 0
         self._init_UI()
 
     def _init_UI(self):
@@ -167,6 +164,12 @@ class RegistrationForm:
             color=disnake.Color.green(),
         ).set_thumbnail(url=Bot.BEP_image)
 
+        self.token_timeout_embed = disnake.Embed(
+            title=self.title,
+            description="""⛔ Le token n'est plus valide. Utilise **"/email"** à nouveau pour réessayer.""",
+            color=disnake.Colour.orange(),
+        )
+
     @property
     def _token_embed(self) -> disnake.Embed:
         return (
@@ -183,7 +186,7 @@ class RegistrationForm:
 
     async def _send(self, inter: disnake.ApplicationCommandInteraction):
         if self.target in self.ulb_users.keys():
-            logging.debug(f"[RegistrationForm] [User:{self.target.id}] End because already registered.")
+            logging.info(f"[RegistrationForm] [User:{self.target.id}] Refused because user already registered.")
             await inter.edit_original_message(
                 embed=disnake.Embed(
                     title=self.title,
@@ -194,8 +197,8 @@ class RegistrationForm:
             return
 
         if self.target in self.pending_registration_users:
-            logging.debug(
-                f"[RegistrationForm] [User:{self.target.id}] End because user in another pending registration."
+            logging.info(
+                f"[RegistrationForm] [User:{self.target.id}] Refused because user in another pending registration."
             )
             await inter.edit_original_message(
                 embed=disnake.Embed(
@@ -205,6 +208,7 @@ class RegistrationForm:
                 ).set_thumbnail(Bot.BEP_image)
             )
             return
+        logging.info(f"[RegistrationForm] [User:{self.target.id}] Registration started")
         self.pending_registration_users.append(self.target)
         logging.debug(f"[RegistrationForm] [User:{self.target.id}] Registration view send")
         await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
@@ -264,7 +268,7 @@ class RegistrationForm:
 
         # Check if pending registration for this email
         if self.email in self.pending_registration_emails:
-            logging.debug(
+            logging.info(
                 f"[RegistrationForm] [User:{self.target.id}] End because email in another pending registration."
             )
             self.registration_embed.clear_fields()
@@ -285,27 +289,61 @@ class RegistrationForm:
         logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token view sent.")
         EmailManager.sendToken(self.email, self.token)
         logging.debug(f"[RegistrationForm] [User:{self.target.id}] Email sent")
+        await asyncio.sleep(self.token_validity_time)
+        if self.token:
+            self.token = None
+            logging.info(f"[RegistrationForm] [User:{self.target.id}] Token timeout.")
+            await inter.edit_original_message(embed=self.token_timeout_embed, view=None)
+            await self._stop()
 
     async def _callback_token_button(self, inter: disnake.MessageInteraction):
         self.token_button.disabled = True
         logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token button callback")
+
+        # If token has timeout
+        if not self.token:
+            await inter.response.edit_message(embed=self.token_timeout_embed, view=None)
+            await self._stop()
+            return
+
         await inter.response.send_modal(self.token_modal)
 
     async def _callback_token_modal(self, inter: disnake.ModalInteraction):
+
+        # If token has timeout
+        if not self.token:
+            await inter.response.edit_message(embed=self.token_timeout_embed, view=None)
+            await self._stop()
+            return
+
         await inter.response.edit_message(embed=self.verification_embed, view=self.token_view)
         token = inter.text_values.get("token")
         logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token modal callback with token={token}.")
         if token != self.token:
             logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token invalid")
-            self.token_button.disabled = False
-            self._token_embed.add_field(
-                name="⚠️ Token invalide !",
-                value="Si tu as fait plusieurs tentative de vérification, utilise bien le dernier token que tu as reçu.",
-            )
-            await inter.edit_original_message(
-                embed=self._token_embed,
-                view=self.token_view,
-            )
+            self.nbr_try += 1
+            if self.nbr_try >= self.token_nbr_try:
+                logging.info(f"[RegistrationForm] [User:{self.target.id}] End because nbr of try for token exceed")
+                embed = self._token_embed.copy().add_field(
+                    name="⛔ Token invalide !",
+                    value="""Nombre de tentative dépassé. **"/email"** pour recommencer.""",
+                )
+                await inter.edit_original_message(
+                    embed=embed,
+                    view=None,
+                )
+                await self._stop()
+                return
+            else:
+                self.token_button.disabled = False
+                embed = self._token_embed.copy().add_field(
+                    name="⚠️ Token invalide !",
+                    value="Si tu as fait plusieurs tentative de vérification, utilise bien le dernier token que tu as reçu.",
+                )
+                await inter.edit_original_message(
+                    embed=embed,
+                    view=self.token_view,
+                )
             return
 
         logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token valid")
@@ -316,7 +354,7 @@ class RegistrationForm:
         self.pending_registration_emails.remove(self.email)
         self.pending_registration_users.remove(self.target)
 
-        logging.debug(f"[RegistrationForm] [User:{self.target.id}] User data stored")
+        logging.info(f"[RegistrationForm] [User:{self.target.id}] Registration succeed")
 
         for guild, role in self.ulb_guilds.items():
             member = guild.get_member(self.target.id)
