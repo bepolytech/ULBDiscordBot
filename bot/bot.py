@@ -21,6 +21,7 @@ import os
 import platform
 import traceback
 import tracemalloc
+from typing import List
 
 tracemalloc.start()
 
@@ -37,7 +38,7 @@ class Bot(InteractionBot):
         self.logger = logger
         self.logFormatter = logFormatter
         self.test_mode = bool(os.getenv("TEST"))
-        self.start_succed: bool = True
+        self.cog_not_loaded: List[str] = []
         intents = disnake.Intents.all()  # Allow the use of custom intents
 
         if self.test_mode:
@@ -71,8 +72,9 @@ class Bot(InteractionBot):
         logging.info(f"| Running on: {platform.system()} {platform.release()} ({os.name})")
         logging.info(f"| Owner : {self.owner}")
         logging.info(f"| Cogs loaded : " + ", ".join([f"{cog}" for cog in self.cogs.keys()]))
-        logging.info("| Started successfully !" if self.start_succed else "| Started with some issues...")
-        logging.info(f"| Ready !")
+        if self.cog_not_loaded:
+            logging.info("| Cogs not loaded (see error above): " + ", ".join(self.cog_not_loaded))
+        logging.info(f"| Bot Ready !")
         logging.info("-" * 50)
 
     def load_commands(self) -> None:
@@ -84,7 +86,7 @@ class Bot(InteractionBot):
                 except Exception as e:
                     exception = f"{type(e).__name__}: {e}"
                     logging.warning(f"Failed to load extension {extension}\n{exception}\n{self.tracebackEx(exception)}")
-                    self.start_succed = False
+                    self.cog_not_loaded.append(extension)
 
     async def send_error_log(self, interaction: ApplicationCommandInteraction, error: Exception):
         tb = self.tracebackEx(error)

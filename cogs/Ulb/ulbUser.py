@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-class ULBUser:
+class UlbUser:
     def __init__(self, name: str, email: str):
         self.name: str = name
         self.email: str = email

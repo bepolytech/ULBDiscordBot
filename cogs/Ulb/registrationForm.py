@@ -11,7 +11,7 @@ from disnake.client import HTTPException
 from disnake.ext import commands
 
 from .email import EmailManager
-from .ULBUser import ULBUser
+from .ulbUser import UlbUser
 from bot import Bot
 from cogs.Ulb.googleSheet import GoogleSheetManager
 
@@ -35,13 +35,13 @@ class RegistrationForm:
     email_domain = "ulb.be"
 
     token_size: int = 10
-    token_validity_time: int = 60 * 1  # In sec
-    timeout_duration = 60 * 1
+    token_validity_time: int = 60 * 5  # In sec
+    timeout_duration = 60 * 10
 
     title = "Vérification de l'identité"
     color = disnake.Colour.dark_blue()
 
-    ulb_users: Dict[disnake.User, ULBUser] = None
+    ulb_users: Dict[disnake.User, UlbUser] = None
     ulb_guilds: Dict[disnake.Guild, disnake.Role] = None
     pending_registration_emails: List[str] = None
     pending_registration_users: List[disnake.User] = None
@@ -63,7 +63,9 @@ class RegistrationForm:
             Raise if the Ulb cog data has not been load yet.
         """
         if GoogleSheetManager.loaded == False:
-            logging.error("You have to load data from google sheet before calling setup for the RegistrationForm class")
+            logging.error(
+                "[RegistrationForm] GoogleSheet need to be loaded before calling setup for the RegistrationForm class"
+            )
             raise AttributeError
         cls.ulb_users = cog.ulb_users
         cls.ulb_guilds = cog.ulb_guilds
@@ -89,11 +91,12 @@ class RegistrationForm:
             Raise if the RegistrationForm has not been setup yet
         """
         if not cls.set:
-            logging.error("RegistrationForm need to be 'setup' before being called")
+            logging.error("[RegistrationForm] setup need to be called before instanciation")
             raise AttributeError
         if not target:
             target = inter.author
         new_form = RegistrationForm(target)
+        logging.debug(f"[RegistrationForm] [User:{target.id}] Created.")
         await new_form._send(inter)
 
     def __init__(self, target: disnake.User):
@@ -180,6 +183,7 @@ class RegistrationForm:
 
     async def _send(self, inter: disnake.ApplicationCommandInteraction):
         if self.target in self.ulb_users.keys():
+            logging.debug(f"[RegistrationForm] [User:{self.target.id}] End because already registered.")
             await inter.edit_original_message(
                 embed=disnake.Embed(
                     title=self.title,
@@ -190,6 +194,9 @@ class RegistrationForm:
             return
 
         if self.target in self.pending_registration_users:
+            logging.debug(
+                f"[RegistrationForm] [User:{self.target.id}] End because user in another pending registration."
+            )
             await inter.edit_original_message(
                 embed=disnake.Embed(
                     title=self.title,
@@ -198,17 +205,19 @@ class RegistrationForm:
                 ).set_thumbnail(Bot.BEP_image)
             )
             return
-
         self.pending_registration_users.append(self.target)
+        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Registration view send")
         await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
 
     async def _callback_registration_button(self, inter: disnake.MessageInteraction):
         self.registration_button.disabled = True
+        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Registration button callback")
         await inter.response.send_modal(self.info_modal)
 
     async def _callback_info_modal(self, inter: disnake.ModalInteraction):
         await inter.response.edit_message(embed=self.verification_embed, view=self.registration_view)
         self.email = inter.text_values.get("email")
+        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Registration Modal callback with email={self.email}")
 
         # Check email format validity
         splited_mail: List[str] = self.email.split("@")
@@ -219,6 +228,7 @@ class RegistrationForm:
             or len(splited_mail[1].split(".")[0]) == 0
             or splited_mail[1].split(".")[1] == 0
         ):
+            logging.debug(f"[RegistrationForm] [User:{self.target.id}] Format not valid.")
             self.registration_button.disabled = False
             self.registration_embed.clear_fields()
             self.registration_embed.add_field(
@@ -229,6 +239,7 @@ class RegistrationForm:
 
         # Check email domain validity
         if splited_mail[1] != self.email_domain:
+            logging.debug(f"[RegistrationForm] [User:{self.target.id}] Domain not valid.")
             self.registration_button.disabled = False
             self.registration_embed.clear_fields()
             self.registration_embed.add_field(
@@ -241,6 +252,7 @@ class RegistrationForm:
         # Check email available
         for user_data in self.ulb_users.values():
             if user_data.email == self.email:
+                logging.debug(f"[RegistrationForm] [User:{self.target.id}] End because email not available")
                 self.registration_embed.clear_fields()
                 self.registration_embed.add_field(
                     f"⛔ **{self.email}** est déjà associée à un autre utilisateur discord",
@@ -252,6 +264,9 @@ class RegistrationForm:
 
         # Check if pending registration for this email
         if self.email in self.pending_registration_emails:
+            logging.debug(
+                f"[RegistrationForm] [User:{self.target.id}] End because email in another pending registration."
+            )
             self.registration_embed.clear_fields()
             self.registration_embed.add_field(
                 f"⛔  L'adresse email {self.email} est déjà en cours de vérification",
@@ -262,19 +277,26 @@ class RegistrationForm:
             return
 
         # Valid and available
+        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Email valid and available.")
         self.pending_registration_emails.append(self.email)
         self.token = secrets.token_hex(self.token_size)[: self.token_size]
+        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token={self.token} generate.")
         await inter.edit_original_message(embed=self._token_embed, view=self.token_view)
+        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token view sent.")
         EmailManager.sendToken(self.email, self.token)
+        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Email sent")
 
     async def _callback_token_button(self, inter: disnake.MessageInteraction):
         self.token_button.disabled = True
+        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token button callback")
         await inter.response.send_modal(self.token_modal)
 
     async def _callback_token_modal(self, inter: disnake.ModalInteraction):
         await inter.response.edit_message(embed=self.verification_embed, view=self.token_view)
         token = inter.text_values.get("token")
+        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token modal callback with token={token}.")
         if token != self.token:
+            logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token invalid")
             self.token_button.disabled = False
             self._token_embed.add_field(
                 name="⚠️ Token invalide !",
@@ -286,25 +308,33 @@ class RegistrationForm:
             )
             return
 
+        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token valid")
         name = " ".join([name.title() for name in self.email.split("@")[0].split(".")])
+        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Extracted name from email= {name}")
         GoogleSheetManager.set_user(self.target.id, name, self.email)
-        self.ulb_users.setdefault(self.target, ULBUser(name, self.email))
+        self.ulb_users.setdefault(self.target, UlbUser(name, self.email))
         self.pending_registration_emails.remove(self.email)
         self.pending_registration_users.remove(self.target)
+
+        logging.debug(f"[RegistrationForm] [User:{self.target.id}] User data stored")
 
         for guild, role in self.ulb_guilds.items():
             member = guild.get_member(self.target.id)
             if member:
                 try:
                     await member.add_roles(role)
+                    logging.debug(f"[RegistrationForm] [User:{self.target.id}] Set role={role.id} on guild={guild.id}")
                 except HTTPException as ex:
                     logging.error(
-                        f'Error adding ulb role "{role.name}:{role.id}" from guild "{guild.name}:{guild.id}" to ulb user "{self.target.name}:{self.target.id}": {ex}'
+                        f'[RegistrationForm] [User:{self.target.id}] Not able to add ulb role "{role.name}:{role.id}" from guild "{guild.name}:{guild.id}" to ulb user "{self.target.name}:{self.target.id}": {ex}'
                     )
                 try:
                     await member.edit(nick=f"{name}")
+                    logging.debug(f"[RegistrationForm] [User:{self.target.id}] Set name on guild={guild.id}")
                 except HTTPException as ex:
-                    logging.warning(f'Error editing user "{self.target.name}:{self.target.id}" nick to "{name}": {ex}')
+                    logging.warning(
+                        f'[RegistrationForm] [User:{self.target.id}] Not able to edit user "{self.target.name}:{self.target.id}" nick to "{name}": {ex}'
+                    )
 
         await inter.edit_original_message(
             embed=self.confirmation_embed,

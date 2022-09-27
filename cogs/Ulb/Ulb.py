@@ -12,7 +12,7 @@ from disnake.ext import commands
 
 from .googleSheet import GoogleSheetManager
 from .registrationForm import RegistrationForm
-from .ULBUser import ULBUser
+from .ulbUser import UlbUser
 from bot import Bot
 
 
@@ -21,7 +21,7 @@ class Ulb(commands.Cog):
         """Initialize the cog"""
         self.bot: Bot = bot
         self.ulb_guilds: Dict[disnake.Guild, disnake.Role] = {}
-        self.ulb_users: Dict[disnake.User, ULBUser] = {}
+        self.ulb_users: Dict[disnake.User, UlbUser] = {}
         self.pending_registration_users: List[disnake.User] = []
         self.pending_registration_emails: List[str] = []
 
@@ -29,11 +29,11 @@ class Ulb(commands.Cog):
     async def on_ready(self):
         (self.ulb_guilds, self.ulb_users) = GoogleSheetManager.load(self.bot)
         RegistrationForm.setup(self)
-        logging.info("ULB data loaded")
+        logging.info("[Cog:Ulb] Ready")
 
     async def wait_data(self) -> None:
         if not GoogleSheetManager.loaded:
-            logging.debug("Waiting for data to be load from google sheet...")
+            logging.debug("[Cog:Ulb] Waiting for data to be load from google sheet...")
             await asyncio.sleep(1)
         while not GoogleSheetManager.loaded:
             await asyncio.sleep(1)
@@ -42,7 +42,7 @@ class Ulb(commands.Cog):
         if not GoogleSheetManager.loaded:
             await self.wait_data()
         if not RegistrationForm.set:
-            logging.debug("Waiting for registrationForm to be set...")
+            logging.debug("[Cog:Ulb]  Waiting for registrationForm to be set...")
             await asyncio.sleep(1)
         while not RegistrationForm.set:
             await asyncio.sleep(1)
@@ -116,21 +116,21 @@ class Ulb(commands.Cog):
                             await member.add_roles(ulb_role)
                         except HTTPException as ex:
                             logging.error(
-                                f'Error adding ulb role "{ulb_role.name}:{ulb_role.id}" from guild "{inter.guild.name}:{inter.guild.id}" to ulb user "{member.name}:{member.id}": {ex}'
+                                f'[Cog:Ulb] Error adding ulb role "{ulb_role.name}:{ulb_role.id}" from guild "{inter.guild.name}:{inter.guild.id}" to ulb user "{member.name}:{member.id}": {ex}'
                             )
                     if member.display_name != ulb_user.name:
                         try:
                             await member.edit(nick=f"{ulb_user.name}")
                         except HTTPException as ex:
                             logging.warning(
-                                f'Error editing user "{member.name}:{member.id}" nick to "{ulb_user.name}": {ex}'
+                                f'[Cog:Ulb] Error editing user "{member.name}:{member.id}" nick to "{ulb_user.name}": {ex}'
                             )
             await inter.edit_original_message(
                 embed=disnake.Embed(description="Mise à jour finie !", color=disnake.Color.green())
             )
         else:
             logging.error(
-                f"Unable to find ulb role from id={self.ulb_guilds.get(inter.guild)} for guild {inter.guild.name}:{inter.guild.id}."
+                f"[Cog:Ulb] Not able to find ulb role from id={self.ulb_guilds.get(inter.guild)} for guild {inter.guild.name}:{inter.guild.id}."
             )
             await inter.edit_original_message(
                 embed=disnake.Embed(
@@ -158,13 +158,13 @@ class Ulb(commands.Cog):
                     await member.add_roles(self.ulb_guilds.get(member.guild))
                 except HTTPException as ex:
                     logging.error(
-                        f'Error adding ulb role "{self.ulb_guilds.get(member.guild).name}:{self.ulb_guilds.get(member.guild).id}" from guild "{member.guild.name}:{member.guild.id}" to ulb user "{member.name}:{member.id}": {ex}'
+                        f'[Cog:Ulb] Error adding ulb role "{self.ulb_guilds.get(member.guild).name}:{self.ulb_guilds.get(member.guild).id}" from guild "{member.guild.name}:{member.guild.id}" to ulb user "{member.name}:{member.id}": {ex}'
                     )
                 try:
                     await member.edit(nick=f"{self.ulb_users.get(member).name}")
                 except HTTPException as ex:
                     logging.warning(
-                        f'Error editing user "{member.name}:{member.id}" nick to "{self.ulb_users.get(member).name}": {ex}'
+                        f'[Cog:Ulb] Error editing user "{member.name}:{member.id}" nick to "{self.ulb_users.get(member).name}": {ex}'
                     )
 
     @commands.Cog.listener("on_guild_join")
@@ -175,7 +175,7 @@ class Ulb(commands.Cog):
                 if role.name == "ULB":
                     self.ulb_guilds[guild] = role
                     logging.info(
-                        f"New guild following ULB template joined. Role {role.name}:{role.id} automatically set as ULB role."
+                        f"[Cog:Ulb] New guild following ULB template joined. Role {role.name}:{role.id} automatically set as ULB role."
                     )
 
 
