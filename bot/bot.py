@@ -39,7 +39,7 @@ class Bot(InteractionBot):
         self.logFormatter = logFormatter
         self.test_mode = bool(os.getenv("TEST"))
         self.cog_not_loaded: List[str] = []
-        intents = disnake.Intents.all()  # Allow the use of custom intents
+        intents = disnake.Intents.all()
 
         if self.test_mode:
             logging.info("Starting in test mod...")

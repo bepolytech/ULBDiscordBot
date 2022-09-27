@@ -83,7 +83,7 @@ class Ulb(commands.Cog):
                 + " ont la permission de changer leur propre pseudo.\nRetirez ces permissions si vous voulez que les membres soit obligés de garder leur vrai nom.",
             )
 
-        # TODO add bot role permissions to tell which role it can edit nick
+        # TODO: add bot role permissions to tell which role it can edit nick
 
         await inter.edit_original_message(embed=embed)
 
@@ -136,6 +136,7 @@ class Ulb(commands.Cog):
                 )
             )
 
+    # FIXME: Event is not triggered ?
     @commands.Cog.listener("on_member_join")
     async def on_member_join(self, member: disnake.Member):
         await self.wait_data()
