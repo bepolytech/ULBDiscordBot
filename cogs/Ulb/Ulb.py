@@ -71,6 +71,7 @@ class Ulb(commands.Cog):
             color=disnake.Color.green(),
         ).set_footer(text='Utilise "/role_update" pour mettre à jour les roles des membres de ce serveur.')
 
+        # Add warning if @everyone or @ulb has the permisions to edit their own nickname
         roles_warning = []
         if inter.guild.default_role.permissions.change_nickname:
             roles_warning.append(inter.guild.default_role.mention)
@@ -83,7 +84,11 @@ class Ulb(commands.Cog):
                 + " ont la permission de changer leur propre pseudo.\nRetirez ces permissions si vous voulez que les membres soit obligés de garder leur vrai nom.",
             )
 
-        # TODO: add bot role permissions to tell which role it can edit nick
+        if inter.me.top_role <= role_ulb:
+            embed.add_field(
+                name="⚠️",
+                value=f"Le role {inter.me.mention} doit être au dessus de {role_ulb.mention} pour pouvoir changer leur pseudo, ce qui n'est pas le cas actuellement !",
+            )
 
         await inter.edit_original_message(embed=embed)
 
@@ -165,6 +170,7 @@ class Ulb(commands.Cog):
                         f'[Cog:Ulb] Error editing user "{member.name}:{member.id}" nick to "{self.ulb_users.get(member).name}": {ex}'
                     )
 
+    # FIXME: Event is not triggered ?
     @commands.Cog.listener("on_guild_join")
     async def on_member_join(self, guild: disnake.Guild):
         # Autodetect ULB role for guild that follow the ULB guild template
