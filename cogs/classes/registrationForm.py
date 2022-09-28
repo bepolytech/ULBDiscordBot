@@ -12,10 +12,10 @@ from disnake.client import HTTPException
 from disnake.ext import commands
 
 from .email import EmailManager
+from .googleSheet import GoogleSheetManager
+from .googleSheet import GoogleSheetManagerNotLoadedError
 from .ulbUser import UlbUser
 from bot import Bot
-from cogs.Ulb.googleSheet import GoogleSheetManager
-from cogs.Ulb.googleSheet import GoogleSheetManagerNotLoadedError
 
 
 class RegistrationFormaNotSetError(Exception):

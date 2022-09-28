@@ -9,9 +9,9 @@ from disnake import ApplicationCommandInteraction
 from disnake.client import HTTPException
 from disnake.ext import commands
 
-from .googleSheet import GoogleSheetManager
-from .registrationForm import RegistrationForm
-from .ulbUser import UlbUser
+from .classes import GoogleSheetManager
+from .classes import RegistrationForm
+from .classes import UlbUser
 from bot import Bot
 
 

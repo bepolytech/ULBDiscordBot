@@ -80,13 +80,15 @@ class Bot(InteractionBot):
 
     def load_commands(self) -> None:
         for extension in os.listdir(f"./cogs"):
-            if extension != ".gitignore":
+            if extension.endswith(".py"):
                 try:
-                    self.load_extension(f"cogs.{extension}.{extension}")
-                    logging.info(f"Loaded extension '{extension}'")
+                    self.load_extension(f"cogs.{extension[:-3]}")
+                    logging.info(f"Loaded extension '{extension[:-3]}'")
                 except Exception as e:
                     exception = f"{type(e).__name__}: {e}"
-                    logging.warning(f"Failed to load extension {extension}\n{exception}\n{self.tracebackEx(exception)}")
+                    logging.warning(
+                        f"Failed to load extension {extension[:-3]}\n{exception}\n{self.tracebackEx(exception)}"
+                    )
                     self.cog_not_loaded.append(extension)
 
     async def send_error_log(self, interaction: ApplicationCommandInteraction, error: Exception):
