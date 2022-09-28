@@ -6,13 +6,13 @@
 
 > This is a small discord bot written in python using the [disnake library](https://github.com/DisnakeDev/disnake) to make a registration system for ULB servers.
 
-<!-- toc-->
+<!-- toc -->
 - [Installation](## 📥 Installation)
 - [DiscordBot](## 🤖 Discord Bot)
 - [Configuration](## 🔐 Configuration)
 - [Run](## 🏃🏼 Run)
 - [Usage](## 💠 Bot usage)
-<!-- toc stop-->
+<!-- toc stop -->
 ## 📥 Installation
 
 ### Install without docker
