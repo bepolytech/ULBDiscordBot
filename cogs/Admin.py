@@ -12,7 +12,7 @@ from classes.registrationForm import AdminAddUserModal
 from classes.registrationForm import AdminEditUserModal
 
 
-# TODO: add a ways to configure generic parameters (registration timeout, toke size, ...) directly with the discord bot
+# TODO: add a ways to configure generic parameters (registration timeout, toke size, ...) directly with the discord bot commands (local .json file ?)
 
 
 class Admin(commands.Cog):
