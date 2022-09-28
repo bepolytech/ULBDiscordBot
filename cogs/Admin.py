@@ -6,7 +6,7 @@ import disnake
 from disnake.ext import commands
 
 from bot import Bot
-from classes import GoogleSheetManager
+from classes import Database
 from classes import update_guild
 from classes.registrationForm import AdminAddUserModal
 from classes.registrationForm import AdminEditUserModal
@@ -31,7 +31,7 @@ class Admin(commands.Cog):
     @update.sub_command(name="database", description="Forcer la mise à jour de la database")
     async def update_database(self, inter: disnake.ApplicationCommandInteraction):
         await inter.response.defer(ephemeral=True)
-        GoogleSheetManager.load()
+        Database.load(self.bot)
         await inter.edit_original_response(
             embed=disnake.Embed(description="Google sheet reloaded !", color=disnake.Color.green())
         )
@@ -40,7 +40,7 @@ class Admin(commands.Cog):
     async def update_guild(self, inter: disnake.ApplicationCommandInteraction):
         await inter.response.defer(ephemeral=True)
 
-        for guild, role in GoogleSheetManager.ulb_guilds.items():
+        for guild, role in Database.ulb_guilds.items():
             await update_guild(guild, role)
 
         await inter.edit_original_response(
@@ -76,7 +76,7 @@ class Admin(commands.Cog):
                 ephemeral=True,
             )
 
-        user_data = GoogleSheetManager.ulb_users.get(user)
+        user_data = Database.ulb_users.get(user)
         if not user_data:
             await inter.response.send_message(
                 embed=disnake.Embed(
@@ -90,12 +90,11 @@ class Admin(commands.Cog):
     @user.sub_command(name="info", description="Voir les informations d'un utilisateur enregistré")
     async def user_info(self, inter: disnake.ApplicationCommandInteraction, user_id: str):
         user = self.bot.get_user(int(user_id))
-        user_data = GoogleSheetManager.ulb_users.get(user)
-        guilds_name: List[str] = [
-            f"`{guild.name}`" for guild in GoogleSheetManager.ulb_guilds.keys() if user in guild.members
-        ]
+        user_data = Database.ulb_users.get(user)
+        guilds_name: List[str] = [f"`{guild.name}`" for guild in Database.ulb_guilds.keys() if user in guild.members]
         await inter.response.send_message(
             embed=disnake.Embed(
+                title="Info de l'utilisateur",
                 description=f"**User id :** `{user_id}`\n**Nom :** {user_data.name}\n**Adresse email :** *{user_data.email}*\n**ULB serveurs :** {','.join(guilds_name) if guilds_name else '*Aucun...*'}",
                 color=disnake.Colour.green(),
             ),
@@ -115,7 +114,7 @@ class Admin(commands.Cog):
             )
             return
 
-        user_data = GoogleSheetManager.ulb_users.get(user)
+        user_data = Database.ulb_users.get(user)
         if not user_data:
             await inter.response.send_message(
                 embed=disnake.Embed(
@@ -125,14 +124,18 @@ class Admin(commands.Cog):
             )
             return
 
-        if user_data.name != name:
+        if user_data.name.lower() != name.lower():
             await inter.response.send_message(
                 embed=disnake.Embed(description="L'id et le nom ne correspondent pas...", color=disnake.Color.red())
             )
         else:
-            GoogleSheetManager.delete_user(user)
+            Database.delete_user(user)
             await inter.response.send_message(
-                embed=disnake.Embed(description="L'utilisateur à bien été supprimé !'", color=disnake.Color.green()),
+                embed=disnake.Embed(
+                    title=f"L'utilisateur à bien été supprimé !",
+                    description=f"**User id :** `{user_id}`\n**Nom :** {user_data.name}\n**Adresse email :** *{user_data.email}*",
+                    color=disnake.Color.green(),
+                ),
                 ephemeral=True,
             )
 
@@ -140,7 +143,7 @@ class Admin(commands.Cog):
     @user_info.autocomplete("user_id")
     @user_delete.autocomplete("user_id")
     async def user_id_autocomplete(self, inter: disnake.ApplicationCommandInteraction, user_input: str):
-        return [str(user.id) for user in GoogleSheetManager.ulb_users.keys() if str(user.id).startswith(user_input)]
+        return [str(user.id) for user in Database.ulb_users.keys() if str(user.id).startswith(user_input)]
 
 
 def setup(bot: commands.InteractionBot):

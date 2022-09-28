@@ -19,21 +19,21 @@ class Ulb(commands.Cog):
 
     @commands.Cog.listener("on_ready")
     async def on_ready(self):
-        GoogleSheetManager.load(self.bot)
+        Database.load(self.bot)
         RegistrationForm.setup(self)
         logging.info("[Cog:Ulb] Ready")
 
     async def wait_data(self) -> None:
         """Async sleep until GoogleSheet is loaded"""
-        if not GoogleSheetManager.loaded:
+        if not Database.loaded:
             logging.debug("[Cog:Ulb] Waiting for data to be load from google sheet...")
             await asyncio.sleep(1)
-        while not GoogleSheetManager.loaded:
+        while not Database.loaded:
             await asyncio.sleep(1)
 
     async def wait_setup(self) -> None:
         """Async sleep until GoogleSheet is loaded and RegistrationForm is set"""
-        if not GoogleSheetManager.loaded:
+        if not Database.loaded:
             await self.wait_data()
         if not RegistrationForm.set:
             logging.debug("[Cog:Ulb]  Waiting for registrationForm to be set...")
@@ -59,7 +59,7 @@ class Ulb(commands.Cog):
         await inter.response.defer(ephemeral=True)
         await self.wait_data()
 
-        GoogleSheetManager.set_guild(inter.guild, role_ulb)
+        Database.set_guild(inter.guild, role_ulb)
         embed = disnake.Embed(
             title="Setup du role ULB du servers",
             description=f"Role **ULB** : {role_ulb.mention}",
@@ -96,7 +96,7 @@ class Ulb(commands.Cog):
         await inter.response.defer(ephemeral=True)
         await self.wait_data()
 
-        ulb_role = GoogleSheetManager.ulb_guilds.get(inter.guild, None)
+        ulb_role = Database.ulb_guilds.get(inter.guild, None)
 
         # Check if ulb role is set
         if not ulb_role:
@@ -108,7 +108,7 @@ class Ulb(commands.Cog):
             )
 
         # Update the guild
-        await utils.update_guild(inter.guild, ulb_role)
+        await utils.update_guild(inter.guild, role=ulb_role)
         await inter.edit_original_message(
             embed=disnake.Embed(description="Mise à jour finie !", color=disnake.Color.green())
         )
@@ -118,12 +118,12 @@ class Ulb(commands.Cog):
     async def on_member_join(self, member: disnake.Member):
         await self.wait_data()
 
-        ulb_role = GoogleSheetManager.ulb_guilds.get(member.guild, None)
+        ulb_role = Database.ulb_guilds.get(member.guild, None)
         # if ulb_role is None, this mean that the guild is not set
         if not ulb_role:
             return
 
-        name = GoogleSheetManager.ulb_users.get(member, None)
+        name = Database.ulb_users.get(member, None)
         # If name is None, this mean that the member is not registered yet
         if not name:
             await member.send(
@@ -143,7 +143,7 @@ class Ulb(commands.Cog):
         if self.ulb_guil_template_url and self.ulb_guil_template_url in [t.code for t in await guild.templates()]:
             for role in guild.roles:
                 if role.name == "ULB":
-                    GoogleSheetManager.set_guild(guild, role)
+                    Database.set_guild(guild, role)
                     logging.info(
                         f"[Cog:Ulb] New guild following ULB template joined. Role {role.name}:{role.id} automatically set as ULB role."
                     )

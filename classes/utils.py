@@ -4,7 +4,7 @@ import logging
 import disnake
 from disnake import HTTPException
 
-from .googleSheet import GoogleSheetManager
+from .database import Database
 
 
 class RoleNotInGuildError(Exception):
@@ -30,11 +30,11 @@ async def update_member(member: disnake.Member, *, name: str = None, role: disna
         Raised if the provided role in not in the roles of the associated guild
     """
     if not role:
-        role = GoogleSheetManager.ulb_guilds.get(member.guild)
+        role = Database.ulb_guilds.get(member.guild)
     elif role not in member.guild.roles:
         raise RoleNotInGuildError(role, member.guild)
     if not name:
-        name = GoogleSheetManager.ulb_users.get(member).name
+        name = Database.ulb_users.get(member).name
 
     try:
         await member.add_roles(role)
@@ -63,8 +63,8 @@ async def update_user(user: disnake.User, *, name: str = None):
         The name to use instead of fetching the database.
     """
     if not name:
-        name = GoogleSheetManager.ulb_users.get(user).name
-    for guild, role in GoogleSheetManager.ulb_guilds.items():
+        name = Database.ulb_users.get(user).name
+    for guild, role in Database.ulb_guilds.items():
         member = guild.get_member(user.id)
         if member:
             await update_member(member, name=name, role=role)
@@ -83,7 +83,7 @@ async def update_guild(guild: disnake.Guild, *, role: disnake.Role = None) -> No
         The role to use instead of fetching the database
     """
     if not role:
-        role = GoogleSheetManager.ulb_guilds.get(guild)
+        role = Database.ulb_guilds.get(guild)
     for member in guild.members:
-        if member in GoogleSheetManager.ulb_users.keys():
+        if member in Database.ulb_users.keys():
             await update_member(member, role=role)

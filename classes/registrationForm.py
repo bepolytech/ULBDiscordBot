@@ -3,15 +3,17 @@ import asyncio
 import logging
 import os
 import secrets
+from datetime import datetime
 from typing import Coroutine
+from typing import Dict
 from typing import List
 
 import disnake
 from disnake.ext import commands
 
+from .database import Database
+from .database import DatabaseNotLoadedError
 from .email import EmailManager
-from .googleSheet import GoogleSheetManager
-from .googleSheet import GoogleSheetManagerNotLoadedError
 from .utils import update_user
 from bot import Bot
 
@@ -52,7 +54,6 @@ class CallbackModal(disnake.ui.Modal):
         await self.callback_coro(interaction)
 
 
-# TODO: add message_jump_irl to error message for pending registration case (and check timeout behaviour)
 class RegistrationForm:
     """Represent the RegistrationForm
 
@@ -65,22 +66,35 @@ class RegistrationForm:
         Create and start a new registration form.
     """
 
+    # Config params
     email_domain = "ulb.be"
     token_size = 10
-    token_validity_time = 60 * 10  # In sec
-    token_nbr_try = 2
-    interaction_validity_time = 60 * 10
+    token_validity_time = 60  # In sec
+    token_nbr_try = 5
+    user_timeout_time = 60 * 5  # In sec
 
-    title = "Vérification de l'identité"
-    color = disnake.Colour.dark_blue()
-    pending_registration_emails: List[str] = []
-    pending_registration_users: List[disnake.User] = []
-    contact_user: disnake.User = None
+    # Class params
+    _title = "Vérification de l'identité"
+    _color = disnake.Colour.dark_blue()
+    _contact_user: disnake.User = None
     _set = False
+
+    _current_registrations: Dict[disnake.User, "RegistrationForm"] = {}
+    _users_timeout: Dict[disnake.User, datetime] = {}
 
     @property
     def set(cls) -> bool:
         return cls._set
+
+    @property
+    def _current_registration_email(self) -> List[str]:
+        return [reg.email for reg in self._current_registrations.values()]
+
+    @classmethod
+    async def _timeout_user(cls, user: disnake.User) -> None:
+        cls._users_timeout[user] = datetime.now()
+        await asyncio.sleep(cls.user_timeout_time)
+        cls._users_timeout.pop(user)
 
     @classmethod
     def setup(cls, cog: commands.Cog) -> None:
@@ -93,11 +107,11 @@ class RegistrationForm:
 
         Raises
         ------
-        `GoogleSheetManagerNotLoadedError`
-            Raise if the GoogleSheetManager has not been load.
+        `DatabaseNotLoadedError`
+            Raise if the Database has not been load.
         """
-        if GoogleSheetManager.loaded == False:
-            raise GoogleSheetManagerNotLoadedError
+        if Database.loaded == False:
+            raise DatabaseNotLoadedError
         cls.contact_user = cog.bot.get_user(int(os.getenv("CONTACT_USER_ID")))
         cls.set = True
 
@@ -119,17 +133,30 @@ class RegistrationForm:
         """
         if not cls.set:
             raise RegistrationFormaNotSetError
+
         if not target:
             target = inter.author
+
+        if target in cls._users_timeout.keys():
+            await inter.edit_original_response(
+                embed=disnake.Embed(
+                    title=cls._title,
+                    description=f"Vous avez récement dépassé le nombre de tentative de vérification de votre adresse email.\nVous pourrez à nouveau essayer dans {(cls.user_timeout_time - (cls._users_timeout.get(target).second - datetime.now().second))//60} min",
+                    color=disnake.Colour.orange(),
+                ).set_thumbnail(Bot.BEP_image)
+            )
+            return
+
         new_form = RegistrationForm(target)
         await new_form._start(inter)
 
     def __init__(self, target: disnake.User) -> None:
         self.target = target
-        self.email = None
-        self.name = None
-        self.token = None
-        self.nbr_try = 0
+        self.email: str = None
+        self.name: str = None
+        self.token: str = None
+        self.msg: disnake.Message = None
+        self.nbr_try: int = 0
 
     async def _start(self, inter: disnake.ApplicationCommandInteraction) -> None:
         """Start a registration.
@@ -143,34 +170,28 @@ class RegistrationForm:
         inter : `disnake.ApplicationCommandInteraction`
             The slash command interaction that trigger the registration
         """
-        ulb_user = GoogleSheetManager.ulb_users.get(self.target, None)
+
+        ulb_user = Database.ulb_users.get(self.target, None)
         # Already registered
         if ulb_user:
             logging.info(f"[RegistrationForm] [User:{self.target.id}] Refused because user already registered.")
             await inter.edit_original_message(
                 embed=disnake.Embed(
-                    title=self.title,
-                    description=f"Tu es déjà associé à l'adresse email suivante : **{ulb_user.email}**.",
+                    title=self._title,
+                    description=f"⛔ Tu es déjà associé à l'adresse email suivante : **{ulb_user.email}**.",
                     color=disnake.Colour.dark_orange(),
                 ).set_thumbnail(Bot.BEP_image)
             )
             return
 
         # Already a registration form pending
-        if self.target in self.pending_registration_users:
-            logging.info(
-                f"[RegistrationForm] [User:{self.target.id}] Refused because user in another pending registration."
-            )
-            await inter.edit_original_message(
-                embed=disnake.Embed(
-                    title=self.title,
-                    description=f"Tu as déjà une vérification en cours. Termine celle-ci ou attends quelques minutes avant de réessayer.",
-                    color=disnake.Colour.dark_orange(),
-                ).set_thumbnail(Bot.BEP_image)
-            )
+        pending_registration = self._current_registrations.get(self.target)
+        if pending_registration:
+            logging.info(f"[RegistrationForm] [User:{self.target.id}] Previous registration process cancelled.")
+            await pending_registration._cancel()
             return
+        self._current_registrations[self.target] = self
 
-        self.pending_registration_users.append(self.target)
         logging.info(f"[RegistrationForm] [User:{self.target.id}] Registration started")
         await self._start_registration_step(inter)
 
@@ -183,16 +204,12 @@ class RegistrationForm:
             The slash command interaction that trigger the step
         """
         # Create UI elements for registration
-        self.registration_embed = (
-            disnake.Embed(
-                title=self.title,
-                description="> Ce serveur est réservé aux étudiants de l'ULB.\n> Pour accéder à ce serveur, tu dois vérifier ton identité avec ton addresse email **ULB**.",
-                color=self.color,
-            )
-            .set_thumbnail(Bot.BEP_image)
-            .set_footer(text=f"Ce message est valide pendant {self.interaction_validity_time//60} minutes.")
-        )
-        self.registration_view = disnake.ui.View(timeout=self.interaction_validity_time)
+        self.registration_embed = disnake.Embed(
+            title=self._title,
+            description="> Ce serveur est réservé aux étudiants de l'ULB.\n> Pour accéder à ce serveur, tu dois vérifier ton identité avec ton addresse email **ULB**.",
+            color=self._color,
+        ).set_thumbnail(Bot.BEP_image)
+        self.registration_view = disnake.ui.View()
         self.registration_button = disnake.ui.Button(
             label="Vérifier son identité", emoji="📧", style=disnake.ButtonStyle.primary
         )
@@ -200,7 +217,7 @@ class RegistrationForm:
         self.registration_view.add_item(self.registration_button)
         self.registration_view.on_timeout = self._stop
         self.info_modal = CallbackModal(
-            title=self.title,
+            title=self._title,
             timeout=60 * 5,
             components=[
                 disnake.ui.TextInput(
@@ -210,11 +227,11 @@ class RegistrationForm:
             callback=self._callback_info_modal,
         )
         self.verification_embed = disnake.Embed(
-            title=self.title, description=f"Vérification en cours...", color=self.color
+            title=self._title, description=f"Vérification en cours...", color=self._color
         ).set_thumbnail(url=Bot.BEP_image)
 
         # Send the message with button
-        await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
+        self.msg = await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
         logging.debug(f"[RegistrationForm] [User:{self.target.id}] Registration view sent")
 
     async def _callback_registration_button(self, inter: disnake.MessageInteraction) -> None:
@@ -243,9 +260,25 @@ class RegistrationForm:
         inter : `disnake.ModalInteraction`
             The modal interaction
         """
-        await inter.response.edit_message(embed=self.verification_embed, view=self.registration_view)
+        self.msg = await inter.response.edit_message(embed=self.verification_embed, view=self.registration_view)
+        logging.debug(
+            f"[RegistrationForm] [User:{self.target.id}] Registration modal callback with email={inter.text_values.get('email')}"
+        )
+
+        # Check email availablility from pending registration
+        if inter.text_values.get("email") in self._current_registration_email:
+            logging.info(
+                f"[RegistrationForm] [User:{self.target.id}] End because email in another pending registration."
+            )
+            self.registration_embed.clear_fields()
+            self.registration_embed.remove_footer().add_field(
+                f"⛔ Adresse email non disponible",
+                value=f"L'adresse email {self.email} est actuellement en cours de vérification par un autre utilisateur...",  # TODO: make a way for the user to be able to register even if someone spam his email
+            )
+            await inter.edit_original_message(embed=self.registration_embed, view=None)
+            await self._stop()
+            return
         self.email = inter.text_values.get("email")
-        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Registration modal callback with email={self.email}")
 
         # Check email format validity
         splited_mail: List[str] = self.email.split("@")
@@ -263,7 +296,7 @@ class RegistrationForm:
                 f"⚠️ Format incorrect",
                 value=f"**{self.email}** n'est pas une adresse email valide.\nVérifie l'adresse email et réessaye.",
             )
-            await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
+            self.msg = await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
             return
 
         # Check email domain validity
@@ -275,41 +308,25 @@ class RegistrationForm:
                 f"⚠️ Domaine incorrect",
                 value=f"**{self.email}** n'est pas une adresse email **ULB**.\nUtilise ton adresse email **@ulb.be**.",
             )
-            await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
+            self.msg = await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
             return
 
         # Check email availablility from registered users
-        for user_data in GoogleSheetManager.ulb_users.values():
+        for user_data in Database.ulb_users.values():
             if user_data.email == self.email:
                 logging.debug(f"[RegistrationForm] [User:{self.target.id}] End because email not available")
                 self.registration_embed.clear_fields()
+                self.registration_embed.colour = disnake.Colour.red()
                 self.registration_embed.remove_footer().add_field(
                     f"⛔ Adresse email non disponible",
-                    value=f"**{self.email}** est déjà associée à un autre utilisateur discord.\nSi cette adresse email est bien la tienne et que quelqu'un a eu accès à ta boite mail pour se faire passer pour toi, envoie un message à {self.contact_user.mention if self.contact_user else 'un administrateur du serveur.'}.",
+                    value=f"**{self.email}** est déjà associée à un autre utilisateur discord.\nSi cette adresse email est bien la tienne et que quelqu'un a eu accès à ta boite mail pour se faire passer pour toi, envoie un message à {self._contact_user.mention if self._contact_user else 'un administrateur du serveur.'}.",
                 )
                 await inter.edit_original_message(embed=self.registration_embed, view=None)
                 await self._stop()
                 return
 
-        # Check email availablility from pending registration
-        if self.email in self.pending_registration_emails:
-            logging.info(
-                f"[RegistrationForm] [User:{self.target.id}] End because email in another pending registration."
-            )
-            self.registration_embed.clear_fields()
-            self.registration_embed.remove_footer().add_field(
-                f"⛔ Adresse email non disponible",
-                value=f"L'adresse email {self.email} est déjà en cours de vérification.\nTermine la vérification en cours ou bien attends quelques minutes avant de réessayer.",
-            )
-            await inter.edit_original_message(embed=self.registration_embed, view=None)
-            await self._stop()
-            return
-
         # Valid and available
         logging.debug(f"[RegistrationForm] [User:{self.target.id}] Email valid and available.")
-        self.pending_registration_emails.append(self.email)
-        self.token = secrets.token_hex(self.token_size)[: self.token_size]
-        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token={self.token} generate.")
         await self._start_token_verification_step(inter)
 
     async def _start_token_verification_step(self, inter: disnake.ModalInteraction) -> None:
@@ -322,26 +339,24 @@ class RegistrationForm:
         inter : `disnake.ModalInteraction`
             The modal interaction that trigger the step
         """
-        print()
         # Create UI elements for the token verification
-        self.token_embed = (
+        self.token_verification_embed = (
             disnake.Embed(
-                title=self.title,
+                title=self._title,
                 description=f"""Un token à été envoyé à l'addresse email ***{self.email}***.""",
-                color=self.color,
+                color=self._color,
             )
             .set_thumbnail(url=Bot.BEP_image)
-            .set_footer(
-                text=f"""Le token est valide pendant {self.token_validity_time//60} minutes, tout comme le bouton sous ce message."""
-            )
+            .set_footer(text=f"""Le token est valide pendant {self.token_validity_time//60} minutes.""")
         )
-        self.token_view = disnake.ui.View(timeout=self.token_validity_time)
-        self.token_button = disnake.ui.Button(label="Entrer le token", emoji="📧", style=disnake.ButtonStyle.primary)
-        self.token_button.callback = self._callback_token_button
-        self.token_view.add_item(self.token_button)
-        self.token_view.on_timeout = self._stop
-        self.token_modal = CallbackModal(
-            title=self.title,
+        self.token_verification_view = disnake.ui.View()
+        self.token_verification_button = disnake.ui.Button(
+            label="Entrer le token", emoji="📧", style=disnake.ButtonStyle.primary
+        )
+        self.token_verification_button.callback = self._callback_token_verification_button
+        self.token_verification_view.add_item(self.token_verification_button)
+        self.token_verification_modal = CallbackModal(
+            title=self._title,
             timeout=60 * 5,
             components=[
                 disnake.ui.TextInput(
@@ -352,28 +367,47 @@ class RegistrationForm:
                     max_length=self.token_size,
                 )
             ],
-            callback=self._callback_token_modal,
-        )
-
-        self.token_timeout_embed = disnake.Embed(
-            title=self.title,
-            description="""⛔ **Le token à expiré.**\nUtilise **"/email"** à nouveau pour réessayer.""",
-            color=disnake.Colour.orange(),
+            callback=self._callback_token_verification_modal,
         )
 
         # Send token verification message en button
-        await inter.edit_original_message(embed=self.token_embed, view=self.token_view)
+        if not inter.response.is_done():
+            self.msg = await inter.response.edit_message(
+                embed=self.token_verification_embed, view=self.token_verification_view
+            )
+        else:
+            self.msg = await inter.edit_original_message(
+                embed=self.token_verification_embed, view=self.token_verification_view
+            )
         logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token view sent.")
+        self.token = secrets.token_hex(self.token_size)[: self.token_size]
+        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token={self.token} generate.")
         EmailManager.send_token(self.email, self.token)
         logging.debug(f"[RegistrationForm] [User:{self.target.id}] Email sent")
         await asyncio.sleep(self.token_validity_time)
         if self.token:
             self.token = None
             logging.info(f"[RegistrationForm] [User:{self.target.id}] Token timeout.")
-            await inter.edit_original_message(embed=self.token_timeout_embed, view=None)
-            await self._stop()
+            await self._start_token_timeout_step(inter)
 
-    async def _callback_token_button(self, inter: disnake.MessageInteraction) -> None:
+    async def _start_token_timeout_step(self, inter: disnake.ApplicationCommandInteraction) -> None:
+
+        # Create UI elements for the token timeout step
+        self.token_timeout_embed = disnake.Embed(
+            title=self._title,
+            description="""⚠️ Le token à expiré.\nDemandez un nouveau token ci-dessous.""",
+            color=disnake.Colour.orange(),
+        ).set_thumbnail(url=Bot.BEP_image)
+        self.token_timeout_view = disnake.ui.View()
+        self.token_timeout_button = disnake.ui.Button(
+            label="Renvoyer un token", emoji="📧", style=disnake.ButtonStyle.primary
+        )
+        self.token_timeout_button.callback = self._start_token_verification_step
+        self.token_timeout_view.add_item(self.token_timeout_button)
+
+        self.msg = await inter.edit_original_response(embed=self.token_timeout_embed, view=self.token_timeout_view)
+
+    async def _callback_token_verification_button(self, inter: disnake.MessageInteraction) -> None:
         """Send the token modal.
 
         If the token has timeout, it send an error message instead.
@@ -383,17 +417,11 @@ class RegistrationForm:
         inter : `disnake.MessageInteraction`
             The button interaction
         """
-        self.token_button.disabled = True
+        self.token_verification_button.disabled = True
         logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token button callback")
+        await inter.response.send_modal(self.token_verification_modal)
 
-        # If token has timeout
-        if not self.token:
-            await inter.response.edit_message(embed=self.token_timeout_embed, view=None)
-            return
-
-        await inter.response.send_modal(self.token_modal)
-
-    async def _callback_token_modal(self, inter: disnake.ModalInteraction) -> None:
+    async def _callback_token_verification_modal(self, inter: disnake.ModalInteraction) -> None:
         """Check the token received from the modal.
 
         If the token has timeout, it send an error message.
@@ -411,10 +439,10 @@ class RegistrationForm:
         """
         # If token has timeout
         if not self.token:
-            await inter.response.edit_message(embed=self.token_timeout_embed, view=None)
+            await inter.response.defer(with_message=False)
             return
 
-        await inter.response.edit_message(embed=self.verification_embed, view=self.token_view)
+        self.msg = await inter.response.edit_message(embed=self.verification_embed, view=self.token_verification_view)
         token = inter.text_values.get("token")
         logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token modal callback with token={token}.")
 
@@ -426,29 +454,31 @@ class RegistrationForm:
             # End the registration
             if self.nbr_try >= self.token_nbr_try:
                 logging.info(f"[RegistrationForm] [User:{self.target.id}] End because nbr of try for token exceed")
-                self.token_embed.clear_fields()
-                self.token_embed.remove_footer().add_field(
+                self.token_verification_embed.clear_fields()
+                self.token_verification_embed.colour = disnake.Colour.red()
+                self.token_verification_embed.remove_footer().add_field(
                     name="⛔ Token invalide",
-                    value="""Nombre de tentative dépassé. **"/email"** pour recommencer.""",
+                    value=f"""Nombre de tentative dépassée.\nTu dois attendre {self.user_timeout_time//60} minutes avant de pouvoir recommencer.""",
                 )
                 await inter.edit_original_message(
-                    embed=self.token_embed,
+                    embed=self.token_verification_embed,
                     view=None,
                 )
+                asyncio.create_task(self._timeout_user(self.target))
                 await self._stop()
                 return
 
             # Ask for it again
             else:
-                self.token_button.disabled = False
-                self.token_embed.clear_fields()
-                self.token_embed.add_field(
+                self.token_verification_button.disabled = False
+                self.token_verification_embed.clear_fields()
+                self.token_verification_embed.add_field(
                     name="⚠️ Token invalide !",
-                    value="Si tu as fait plusieurs tentative de vérification, utilise bien le dernier token que tu as reçu.",
+                    value="Si tu as fait plusieurs tentatives de vérification, utilise bien le dernier token que tu as reçu.",
                 )
-                await inter.edit_original_message(
-                    embed=self.token_embed,
-                    view=self.token_view,
+                self.msg = await inter.edit_original_message(
+                    embed=self.token_verification_embed,
+                    view=self.token_verification_view,
                 )
             return
 
@@ -468,14 +498,14 @@ class RegistrationForm:
         # Extract name and store the user
         name = " ".join([name.title() for name in self.email.split("@")[0].split(".")])
         logging.debug(f"[RegistrationForm] [User:{self.target.id}] Extracted name from email= {name}")
-        GoogleSheetManager.set_user(self.target, name, self.email)
+        Database.set_user(self.target, name, self.email)
         await self._stop()
         logging.info(f"[RegistrationForm] [User:{self.target.id}] Registration succeed")
 
         # Send confirmation message
         await inter.edit_original_message(
             embed=disnake.Embed(
-                title=f"✅ {self.title}",
+                title=f"✅ {self._title}",
                 description="Ton addresse mail **ULB** est bien vérifiée !\nTu as désormais accès aux serveurs **ULB**",
                 color=disnake.Color.green(),
             ).set_thumbnail(url=Bot.BEP_image),
@@ -484,17 +514,17 @@ class RegistrationForm:
 
         await update_user(self.target, name)
 
+    async def _cancel(self) -> None:
+        await self._stop()
+        await self.msg.edit(
+            embed=disnake.Embed(
+                title=self._title, description="Vérification abandonnée.", color=disnake.Colour.dark_grey()
+            )
+        )
+
     async def _stop(self) -> None:
         """Properly end a registration process by deleting the related pending registration entries."""
-        try:
-            self.pending_registration_users.remove(self.target)
-        except ValueError:
-            pass
-        if self.email:
-            try:
-                self.pending_registration_emails.remove(self.email)
-            except ValueError:
-                pass
+        self._current_registrations.pop(self.target)
 
 
 class AdminAddUserModal(disnake.ui.Modal):
@@ -513,7 +543,7 @@ class AdminAddUserModal(disnake.ui.Modal):
         await interaction.response.defer(ephemeral=True)
         name = interaction.text_values.get("name")
         email = interaction.text_values.get("email", self._email_default_value)
-        GoogleSheetManager.set_user(self.user, name, email)
+        Database.set_user(self.user, name, email)
         await interaction.edit_original_response(
             embed=disnake.Embed(
                 description=f"{self.user.mention} a bien été ajouté à la base de donnée", color=disnake.Color.green()
@@ -529,9 +559,9 @@ class AdminEditUserModal(disnake.ui.Modal):
 
     def __init__(self, user: disnake.User) -> None:
         self.user = user
-        user_data = GoogleSheetManager.ulb_users.get(user)
+        user_data = Database.ulb_users.get(user)
         components = [
-            disnake.ui.TextInput(label="Prenom + Nom", custom_id="name", value=user.data.name),
+            disnake.ui.TextInput(label="Prenom + Nom", custom_id="name", value=user_data.name),
             disnake.ui.TextInput(
                 label="Adresse email (optional)",
                 custom_id="email",
@@ -546,7 +576,7 @@ class AdminEditUserModal(disnake.ui.Modal):
         await interaction.response.defer(ephemeral=True)
         name = interaction.text_values.get("name")
         email = interaction.text_values.get("email", self._email_default_value)
-        GoogleSheetManager.set_user(self.user, name, email)
+        Database.set_user(self.user, name, email)
 
         await interaction.edit_original_response(
             embed=disnake.Embed(

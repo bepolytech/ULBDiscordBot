@@ -12,22 +12,22 @@ from .ulbUser import UlbUser
 from bot import Bot
 
 
-class GoogleSheetManagerNotLoadedError(Exception):
-    """The Exception to be raise when the GoogleSheetManager class is used without have been loaded."""
+class DatabaseNotLoadedError(Exception):
+    """The Exception to be raise when the DataBase class is used without have been loaded."""
 
     def __init__(self, *args: object) -> None:
-        super().__init__("The GoogleSheetManager class need to be loaded with 'load()' before being used !")
+        super().__init__("The DataBase class need to be loaded with 'load()' before being used !")
 
 
-class GoogleSheetInstantiationError(Exception):
-    """The Exception to be raise when the GoogleSheetManager class is instantiated."""
+class DatabaseInstantiationError(Exception):
+    """The Exception to be raise when the DataBase class is instantiated."""
 
     def __init__(self, *args: object) -> None:
-        super().__init__("The GoogleSheetManager class cannot be instantiated, but only used as a class.")
+        super().__init__("The DataBase class cannot be instantiated, but only used as a class.")
 
 
-class GoogleSheetManager:
-    """Represent the GoogleSheetManager.
+class Database:
+    """Represent the DataBase.
 
     This class is only used as a class and should not be instantiated
 
@@ -55,7 +55,7 @@ class GoogleSheetManager:
     _loaded = False
 
     def __init__(self) -> None:
-        raise GoogleSheetInstantiationError
+        raise DatabaseInstantiationError
 
     @property
     def loaded(cls) -> bool:
@@ -91,11 +91,10 @@ class GoogleSheetManager:
             cls._client = gspread.authorize(creds)
             logging.info("[GoogleSheet] Google sheet credentials loaded.")
 
-            # TODO: check if neede to re-open to actualise or not
             # Open google sheet
             cls._sheet = cls._client.open_by_url(os.getenv("GOOGLE_SHEET_URL"))
-            cls.users_ws = cls._sheet.worksheet("users")
-            cls.guilds_ws = cls._sheet.worksheet("guilds")
+            cls._users_ws = cls._sheet.worksheet("users")
+            cls._guilds_ws = cls._sheet.worksheet("guilds")
 
             logging.info("[GoogleSheet] Spreadsheed loaded")
 
@@ -103,7 +102,7 @@ class GoogleSheetManager:
 
         # Load guilds
         cls.ulb_guilds = {}
-        for guild_data in cls.guilds_ws.get_all_records():
+        for guild_data in cls._guilds_ws.get_all_records():
             guild = bot.get_guild(guild_data.get("guild_id", int))
             if guild:
                 role = guild.get_role(guild_data.get("role_id", int))
@@ -122,7 +121,7 @@ class GoogleSheetManager:
 
         # Load users
         cls.ulb_users = {}
-        for user_data in cls.users_ws.get_all_records():
+        for user_data in cls._users_ws.get_all_records():
             user = bot.get_user(user_data.get("user_id", int))
             if user:
                 cls.ulb_users.setdefault(user, UlbUser(user_data.get("name", str), user_data.get("email", str)))
@@ -148,17 +147,17 @@ class GoogleSheetManager:
         email : `str`
             The email address
         """
-        user_cell: gspread.cell.Cell = cls.users_ws.find(str(user_id), in_column=1)
+        user_cell: gspread.cell.Cell = cls._users_ws.find(str(user_id), in_column=1)
         await asyncio.sleep(0.1)
         if user_cell:
             logging.debug(f"[GoogleSheet] {user_id=} found in WS at row={user_cell.row}")
-            cls.users_ws.update_cell(user_cell.row, 2, name)
+            cls._users_ws.update_cell(user_cell.row, 2, name)
             await asyncio.sleep(0.1)
-            cls.users_ws.update_cell(user_cell.row, 3, email)
+            cls._users_ws.update_cell(user_cell.row, 3, email)
             logging.debug(f"[GoogleSheet] {user_id=} updated with {name=} and {email=}")
         else:
             logging.debug(f"[GoogleSheet] {user_id=} not found in WS")
-            cls.users_ws.append_row(values=[str(user_id), name, email])
+            cls._users_ws.append_row(values=[str(user_id), name, email])
             logging.debug(f"[GoogleSheet] {user_id=} added with {name=} and {email=}")
 
     @classmethod
@@ -176,6 +175,8 @@ class GoogleSheetManager:
         email : `str`
             The email address
         """
+        if not cls._loaded:
+            raise DatabaseNotLoadedError
         cls.ulb_users[user] = UlbUser(name, email)
         asyncio.create_task(cls._set_user_task(user.id, name, email))
 
@@ -192,10 +193,10 @@ class GoogleSheetManager:
         email : `str`
             The email address
         """
-        user_cell: gspread.cell.Cell = cls.users_ws.find(str(user_id), in_column=1)
+        user_cell: gspread.cell.Cell = cls._users_ws.find(str(user_id), in_column=1)
         await asyncio.sleep(0.1)
         logging.debug(f"[GoogleSheet] {user_id=} found in WS at row={user_cell.row}")
-        cls.users_ws.delete_row(user_cell.row)
+        cls._users_ws.delete_row(user_cell.row)
         await asyncio.sleep(0.1)
         logging.debug(f"[GoogleSheet] {user_id=} deleted from google sheet")
 
@@ -210,6 +211,8 @@ class GoogleSheetManager:
         user : `disnake.User`
             The user to delete
         """
+        if not cls._loaded:
+            raise DatabaseNotLoadedError
         cls.ulb_users.pop(user)
         asyncio.create_task(cls._delete_user_task(user.id))
 
@@ -226,15 +229,15 @@ class GoogleSheetManager:
         role_id : `int`
             Ulb Role id
         """
-        guild_cell: gspread.cell.Cell = cls.guilds_ws.find(str(guild_id), in_column=1)
+        guild_cell: gspread.cell.Cell = cls._guilds_ws.find(str(guild_id), in_column=1)
         await asyncio.sleep(0.1)
         if guild_cell:
             logging.debug(f"[GoogleSheet] {guild_id=} found in WS.")
-            cls.guilds_ws.update_cell(guild_cell.row, 2, str(role_id))
+            cls._guilds_ws.update_cell(guild_cell.row, 2, str(role_id))
             logging.debug(f"[GoogleSheet] {guild_id=} update with {role_id=}.")
         else:
             logging.debug(f"[GoogleSheet] {guild_id=} not found in WS.")
-            cls.guilds_ws.append_row(values=[str(guild_id), str(role_id)])
+            cls._guilds_ws.append_row(values=[str(guild_id), str(role_id)])
             logging.debug(f"[GoogleSheet] {guild_id=} added with {role_id=}.")
 
     @classmethod
@@ -250,5 +253,7 @@ class GoogleSheetManager:
         role_id : `int`
             Ulb Role id
         """
+        if not cls._loaded:
+            raise DatabaseNotLoadedError
         cls.ulb_guilds[guild] = role
         asyncio.create_task(cls._set_guild_task(guild.id, role.id))
