@@ -290,7 +290,7 @@ class RegistrationForm:
                 self.registration_embed.clear_fields()
                 self.registration_embed.remove_footer().add_field(
                     f"⛔ Adresse email non disponible",
-                    value=f"**{self.email}** est déjà associée à un autre utilisateur discord.\nSi cette adresse email est bien la tienne et que quelqu'un a eu accès à ta boite mail pour se faire passer pour toi, envoie un message à {self.contact_user.mention if self.contact_user else '**@Bureau Etudiant Polytechnique**'}.",
+                    value=f"**{self.email}** est déjà associée à un autre utilisateur discord.\nSi cette adresse email est bien la tienne et que quelqu'un a eu accès à ta boite mail pour se faire passer pour toi, envoie un message à {self.contact_user.mention if self.contact_user else 'un administrateur du serveur.'}.",
                 )
                 await inter.edit_original_message(embed=self.registration_embed, view=None)
                 await self._stop()
