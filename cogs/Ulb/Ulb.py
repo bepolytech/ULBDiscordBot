@@ -21,6 +21,7 @@ class Ulb(commands.Cog):
         self.bot: Bot = bot
         self.ulb_guilds: Dict[disnake.Guild, disnake.Role] = {}
         self.ulb_users: Dict[disnake.User, UlbUser] = {}
+        self.ulb_guil_template_url: str = os.getenv("GUILD_TEMPLATE_URL")
 
     @commands.Cog.listener("on_ready")
     async def on_ready(self):
@@ -176,7 +177,7 @@ class Ulb(commands.Cog):
     @commands.Cog.listener("on_guild_join")
     async def on_member_join(self, guild: disnake.Guild):
         # Autodetect ULB role for guild that follow the ULB guild template
-        if os.getenv("GUILD_TEMPLATE_CODE") in [t.code for t in await guild.templates()]:
+        if self.ulb_guil_template_url and self.ulb_guil_template_url in [t.code for t in await guild.templates()]:
             for role in guild.roles:
                 if role.name == "ULB":
                     self.ulb_guilds[guild] = role
