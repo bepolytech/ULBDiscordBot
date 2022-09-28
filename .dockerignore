@@ -2,4 +2,3 @@
 *.log
 *.log.*
 *.json
-.env.docker
