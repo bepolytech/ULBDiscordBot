@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import asyncio
-import json
 import logging
 import os
 from typing import Dict
@@ -72,7 +71,18 @@ class GoogleSheetManager:
             - Guild: `Dict[disnake.Guild, disnake.Role]`
             - Users: `Dict[disnake.User, UlbUser]]`
         """
-        cred_dict = json.load(open("cogs/Ulb/google_sheet_cred.json", "rb"))
+        # cred_dict = json.load(open("cogs/Ulb/google_sheet_cred.json", "rb"))
+        cred_dict = {}
+        cred_dict["type"] = os.getenv("GS_TYPE")
+        cred_dict["project_id"] = os.getenv("GS_PROJECT_ID")
+        cred_dict["auth_uri"] = os.getenv("GS_AUTHOR_URI")
+        cred_dict["token_uri"] = os.getenv("GS_TOKEN_URI")
+        cred_dict["auth_provider_x509_cert_url"] = os.getenv("GS_AUTH_PROV")
+        cred_dict["client_x509_cert_url"] = os.getenv("GS_CLIENT_CERT_URL")
+        cred_dict["private_key"] = os.getenv("GS_PRIVATE_KEY")
+        cred_dict["private_key_id"] = os.getenv("GS_PRIVATE_KEY_ID")
+        cred_dict["client_email"] = os.getenv("GS_CLIENT_EMAIL")
+        cred_dict["client_id"] = os.getenv("GS_CLIENT_ID")
         creds = ServiceAccountCredentials.from_json_keyfile_dict(cred_dict, cls._scope)
         client = gspread.authorize(creds)
         sheet = client.open_by_url(os.getenv("GOOGLE_SHEET_URL"))

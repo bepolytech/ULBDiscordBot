@@ -103,7 +103,7 @@ class RegistrationForm:
             raise GoogleSheetManagerNotLoadedError
         cls.ulb_users = cog.ulb_users
         cls.ulb_guilds = cog.ulb_guilds
-        cls.contact_user = cog.bot.get_user(int(os.getenv("BEP_USER_ID")))
+        cls.contact_user = cog.bot.get_user(int(os.getenv("CONTACT_USER_ID")))
         cls.set = True
 
     @classmethod
