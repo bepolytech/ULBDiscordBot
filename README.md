@@ -4,7 +4,7 @@
 
 ⚠️ **WORK IN PROGRESS** ⚠️
 
-> This is a small discord bot written in python using the [disnake library](https://github.com/DisnakeDev/disnake) to make a registration system for ULB servers.
+This is a small discord bot written in python using the [disnake library](https://github.com/DisnakeDev/disnake) to make a registration system for ULB servers.
 
 ## 📥 Installation
 
@@ -28,59 +28,59 @@ TODO
 
 Go to the [discord developper portal](https://discord.com/developers/applications):
 
-> Create a new application. Once on the app dashboard, go to `Bot` and click `Add Bot`.
+Create a new application. Once on the app dashboard, go to `Bot` and click `Add Bot`.
 
 ### Settings
 
 On the `Bot` page:
 
-> Considere unchecking the `Public Bot` field if you don't want everybody to be able to add the bot to their server.
+Considere unchecking the `Public Bot` field if you don't want everybody to be able to add the bot to their server.
 
-> Check the `Server Members Intent`.
+Check the `Server Members Intent`.
 
-> You can also change the bot `user name` and `icon`.
+You can also change the bot `user name` and `icon`.
 
-> Click on `Reset Token` and save the new generated token for later.
+Click on `Reset Token` and save the new generated token for later.
 
-On the `OAuth2` > `URL Generator` > `Scopes`
+On the `OAuth2` `URL Generator` `Scopes`
 
-> Check the following fields:
+Check the following fields:
 
 * `bot`
 * `applications.commands`
 
 On the `Bot Permissions` that appeared below
 
-> Check the following fields:
+Check the following fields:
 
 * `Manages Roles`
 * `Manage Nicknames`
 * `Send Messages`
 * `Use Slash Commands`
 
-> Copy the `Generated URL` given below, this is the URL to use to add the bot to your server
+Copy the `Generated URL` given below, this is the URL to use to add the bot to your server
 
 ## 🔐 Configuration
 
-> Copy the `.env_template` -> `.env` to easily see all the parameters that need to be set.
+Copy the `.env_template` -`.env` to easily see all the parameters that need to be set.
 
 ### Discord
 
 * `DISCORD_TOKEN`
 
-> The bot token generated above.
+The bot token generated above.
 
 * `LOG_CHANNEL`
 
-> (Optional) The discord channel ID where the bot will send message when an error occure during a command. It need to have acces to this channel. If not provided, the bot owner DM is used.
+(Optional) The discord channel ID where the bot will send message when an error occure during a command. It need to have acces to this channel. If not provided, the bot owner DM is used.
 
 * `CONTACT_USER_ID`
 
-> (Optional) The user id that users can contact in case of an issu with the registration.
+(Optional) The user id that users can contact in case of an issu with the registration.
 
 * `GUILD_TEMPLATE_URL`
 
-> (Optional) The url of the guild template to automatically detect role (must have a `@ULB` role).
+(Optional) The url of the guild template to automatically detect role (must have a `@ULB` role).
 
 ### Email
 
@@ -88,15 +88,15 @@ This bot is writen to send email through gmail account.
 
 * `EMAIL_ADDR`
 
-> The email address
+The email address
 
 * `AUTH_TOKEN`
 
-> You need to go to the [google account settings > Security](https://myaccount.google.com/security?hl=fr), enable the two-factor authentification then generate an applications password for the email app.
+You need to go to the [google account settings Security](https://myaccount.google.com/security?hl=fr), enable the two-factor authentification then generate an applications password for the email app.
 
 ### Google Sheet
 
-> To generate google sheet api credentials, follow [this guide](https://medium.com/@a.marenkov/how-to-get-credentials-for-google-sheets-456b7e88c430). You will get a `.json` file with all the following fields:
+To generate google sheet api credentials, follow [this guide](https://medium.com/@a.marenkov/how-to-get-credentials-for-google-sheets-456b7e88c430). You will get a `.json` file with all the following fields:
 
 * `GS_TYPE` <- `'type'`
 * `GS_PROJECT_ID` <- `'project_id'`
@@ -113,7 +113,7 @@ The last field is:
 
 * `GOOGLE_SHEET_URL`
 
-> The google sheet url. It need to be shared to the bot using the email address on `client_email`
+The google sheet url. It need to be shared to the bot using the email address on `client_email`
 
 ## 🏃🏼 Run
 
@@ -134,12 +134,12 @@ docker run --env-file=.env ulbdiscordbot
 
 * `/role setup`
 
-> When adding the bot to a new server, either the server follow the guild template given, and the role `@ULB` will get automatically set, or you can set it manually with the command `/role setup` (admin permission needed).
+When adding the bot to a new server, either the server follow the guild template given, and the role `@ULB` will get automatically set, or you can set it manually with the command `/role setup` (admin permission needed).
 
 * `/email`
 
-> Once the ULB role is set, when a new user join the server, either he is already registered (from another of yours server) in which case he will get the `@ULB` role and get rename, or he is not registered yet and will received a DM message with the instruction to register himself using `/email` command.
+Once the ULB role is set, when a new user join the server, either he is already registered (from another of yours server) in which case he will get the `@ULB` role and get rename, or he is not registered yet and will received a DM message with the instruction to register himself using `/email` command.
 
 * `/role update`
 
-> At any point, you can run `/role update` (admin permission needed) to check all the member of the server and add `@ULB` role and rename if the member is registered (usefull when adding the bot to a server that already contains registered users, or if you have manually added an user to the google sheet). ⚠️ That won't affect users that are not registered, so you can still add manually the `@ULB` role to someone to give him acces to only this server.
+At any point, you can run `/role update` (admin permission needed) to check all the member of the server and add `@ULB` role and rename if the member is registered (usefull when adding the bot to a server that already contains registered users, or if you have manually added an user to the google sheet). ⚠️ That won't affect users that are not registered, so you can still add manually the `@ULB` role to someone to give him acces to only this server.
