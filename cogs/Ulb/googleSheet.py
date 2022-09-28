@@ -79,10 +79,12 @@ class GoogleSheetManager:
         cred_dict["token_uri"] = os.getenv("GS_TOKEN_URI")
         cred_dict["auth_provider_x509_cert_url"] = os.getenv("GS_AUTH_PROV")
         cred_dict["client_x509_cert_url"] = os.getenv("GS_CLIENT_CERT_URL")
-        cred_dict["private_key"] = os.getenv("GS_PRIVATE_KEY")
+        cred_dict["private_key"] = os.getenv("GS_PRIVATE_KEY").replace(
+            "\\n", "\n"
+        )  # Python add a '\' before any '\n' when loading a str
         cred_dict["private_key_id"] = os.getenv("GS_PRIVATE_KEY_ID")
         cred_dict["client_email"] = os.getenv("GS_CLIENT_EMAIL")
-        cred_dict["client_id"] = os.getenv("GS_CLIENT_ID")
+        cred_dict["client_id"] = int(os.getenv("GS_CLIENT_ID"))
         creds = ServiceAccountCredentials.from_json_keyfile_dict(cred_dict, cls._scope)
         client = gspread.authorize(creds)
         sheet = client.open_by_url(os.getenv("GOOGLE_SHEET_URL"))
