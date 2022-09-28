@@ -7,9 +7,9 @@
 > This is a small discord bot written in python using the [disnake library](https://github.com/DisnakeDev/disnake) to make a registration system for ULB servers.
 > 
 <!-- toc -->
-* [Installation](https://github.com/OscarVsp/ULBDiscordBot/blob/master/README.md#-installation)
-* [DiscordBot](https://github.com/OscarVsp/ULBDiscordBot/blob/master/README.md#-discord-bot)
-* [Configuration](## 🔐 Configuration)
+* [📥 Installation](https://github.com/OscarVsp/ULBDiscordBot/blob/master/README.md#-installation)
+* [🤖 Discord Bot](https://github.com/OscarVsp/ULBDiscordBot/blob/master/README.md#-discord-bot)
+* [🔐 Configuration](https://github.com/OscarVsp/ULBDiscordBot/blob/master/README.md#-configuration)
 * [Run](## 🏃🏼 Run)
 * [Usage](## 💠 Bot usage)
 <!-- toc stop -->
