@@ -37,7 +37,7 @@ class Bot(InteractionBot):
     def __init__(self, logger, logFormatter):
         self.logger = logger
         self.logFormatter = logFormatter
-        self.test_mode = bool(os.getenv("TEST"))
+        self.test_mode = bool(os.getenv("TEST_FLAG"))
         self.cog_not_loaded: List[str] = []
         intents = disnake.Intents.all()
 
@@ -81,13 +81,16 @@ class Bot(InteractionBot):
     def load_commands(self) -> None:
         for extension in os.listdir(f"./cogs"):
             if extension.endswith(".py"):
+                if extension == ("Admin.py") and not os.getenv("ADMIN_GUILD_ID"):
+                    logging.warning("Admin extension skipped because no admin guild set")
+                    continue
                 try:
                     self.load_extension(f"cogs.{extension[:-3]}")
                     logging.info(f"Loaded extension '{extension[:-3]}'")
                 except Exception as e:
                     exception = f"{type(e).__name__}: {e}"
                     logging.warning(
-                        f"Failed to load extension {extension[:-3]}\n{exception}\n{self.tracebackEx(exception)}"
+                        f"Failed to load extension {extension[:-3]}: {exception}\n{self.tracebackEx(exception)}"
                     )
                     self.cog_not_loaded.append(extension)
 

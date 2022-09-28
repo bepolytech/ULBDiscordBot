@@ -11,7 +11,8 @@ from classes import update_guild
 from classes.registrationForm import AdminAddUserModal
 from classes.registrationForm import AdminEditUserModal
 
-admin_guild_id = int(os.getenv("ADMIN_GUILD_ID"))
+
+# TODO: add a ways to configure generic parameters (registration timeout, toke size, ...) directly with the discord bot
 
 
 class Admin(commands.Cog):
@@ -19,7 +20,11 @@ class Admin(commands.Cog):
         """Initialize the cog"""
         self.bot: Bot = bot
 
-    @commands.slash_command(name="update", guilds=[admin_guild_id])
+    @commands.slash_command(name="admin", guilds=[int(os.getenv("ADMIN_GUILD_ID"))])
+    async def admin(self, inter):
+        pass
+
+    @admin.sub_command_group(name="update")
     async def update(self, inter):
         pass
 
@@ -42,7 +47,7 @@ class Admin(commands.Cog):
             embed=disnake.Embed(description="All servers updated !", color=disnake.Color.green())
         )
 
-    @commands.slash_command(name="user", guild_ids=[admin_guild_id])
+    @admin.sub_command_group(name="user")
     async def user(self, inter):
         pass
 
@@ -139,4 +144,5 @@ class Admin(commands.Cog):
 
 
 def setup(bot: commands.InteractionBot):
+
     bot.add_cog(Admin(bot))
