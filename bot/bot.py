@@ -64,6 +64,8 @@ class Bot(InteractionBot):
         The code in this even is executed when the bot is ready
         """
         self.log_channel = self.get_channel(int(os.getenv("LOG_CHANNEL")))
+        if not self.log_channel:
+            self.log_channel = self.owner.dm_channel
         logging.info("-" * 50)
         logging.info(f"| Logged in as {self.user.name}")
         logging.info(f"| disnake API version: {disnake.__version__}")
