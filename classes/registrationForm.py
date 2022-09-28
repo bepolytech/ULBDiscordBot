@@ -4,17 +4,15 @@ import logging
 import os
 import secrets
 from typing import Coroutine
-from typing import Dict
 from typing import List
 
 import disnake
-from disnake.client import HTTPException
 from disnake.ext import commands
 
 from .email import EmailManager
 from .googleSheet import GoogleSheetManager
 from .googleSheet import GoogleSheetManagerNotLoadedError
-from .ulbUser import UlbUser
+from .utils import update_user
 from bot import Bot
 
 
@@ -54,6 +52,7 @@ class CallbackModal(disnake.ui.Modal):
         await self.callback_coro(interaction)
 
 
+# TODO: add message_jump_irl to error message for pending registration case (and check timeout behaviour)
 class RegistrationForm:
     """Represent the RegistrationForm
 
@@ -74,8 +73,6 @@ class RegistrationForm:
 
     title = "Vérification de l'identité"
     color = disnake.Colour.dark_blue()
-    ulb_users: Dict[disnake.User, UlbUser] = None
-    ulb_guilds: Dict[disnake.Guild, disnake.Role] = None
     pending_registration_emails: List[str] = []
     pending_registration_users: List[disnake.User] = []
     contact_user: disnake.User = None
@@ -101,8 +98,6 @@ class RegistrationForm:
         """
         if GoogleSheetManager.loaded == False:
             raise GoogleSheetManagerNotLoadedError
-        cls.ulb_users = cog.ulb_users
-        cls.ulb_guilds = cog.ulb_guilds
         cls.contact_user = cog.bot.get_user(int(os.getenv("CONTACT_USER_ID")))
         cls.set = True
 
@@ -148,14 +143,14 @@ class RegistrationForm:
         inter : `disnake.ApplicationCommandInteraction`
             The slash command interaction that trigger the registration
         """
-
+        ulb_user = GoogleSheetManager.ulb_users.get(self.target, None)
         # Already registered
-        if self.target in self.ulb_users.keys():
+        if ulb_user:
             logging.info(f"[RegistrationForm] [User:{self.target.id}] Refused because user already registered.")
             await inter.edit_original_message(
                 embed=disnake.Embed(
                     title=self.title,
-                    description=f"Tu es déjà associé à l'adresse email suivante : **{self.ulb_users.get(self.target).email}**.",
+                    description=f"Tu es déjà associé à l'adresse email suivante : **{ulb_user.email}**.",
                     color=disnake.Colour.dark_orange(),
                 ).set_thumbnail(Bot.BEP_image)
             )
@@ -284,7 +279,7 @@ class RegistrationForm:
             return
 
         # Check email availablility from registered users
-        for user_data in self.ulb_users.values():
+        for user_data in GoogleSheetManager.ulb_users.values():
             if user_data.email == self.email:
                 logging.debug(f"[RegistrationForm] [User:{self.target.id}] End because email not available")
                 self.registration_embed.clear_fields()
@@ -420,10 +415,10 @@ class RegistrationForm:
             return
 
         await inter.response.edit_message(embed=self.verification_embed, view=self.token_view)
-
-        # Check the token
         token = inter.text_values.get("token")
         logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token modal callback with token={token}.")
+
+        # If token invalid
         if token != self.token:
             logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token invalid")
             self.nbr_try += 1
@@ -473,8 +468,7 @@ class RegistrationForm:
         # Extract name and store the user
         name = " ".join([name.title() for name in self.email.split("@")[0].split(".")])
         logging.debug(f"[RegistrationForm] [User:{self.target.id}] Extracted name from email= {name}")
-        GoogleSheetManager.set_user(self.target.id, name, self.email)
-        self.ulb_users.setdefault(self.target, UlbUser(name, self.email))
+        GoogleSheetManager.set_user(self.target, name, self.email)
         await self._stop()
         logging.info(f"[RegistrationForm] [User:{self.target.id}] Registration succeed")
 
@@ -488,24 +482,7 @@ class RegistrationForm:
             View=None,
         )
 
-        # Add role and edit nickname for all guild where the user is
-        for guild, role in self.ulb_guilds.items():
-            member = guild.get_member(self.target.id)
-            if member:
-                try:
-                    await member.add_roles(role)
-                    logging.debug(f"[RegistrationForm] [User:{self.target.id}] Set role={role.id} on guild={guild.id}")
-                except HTTPException as ex:
-                    logging.error(
-                        f'[RegistrationForm] [User:{self.target.id}] Not able to add ulb role "{role.name}:{role.id}" from guild "{guild.name}:{guild.id}" to ulb user "{self.target.name}:{self.target.id}": {ex}'
-                    )
-                try:
-                    await member.edit(nick=f"{name}")
-                    logging.debug(f"[RegistrationForm] [User:{self.target.id}] Set name on guild={guild.id}")
-                except HTTPException as ex:
-                    logging.warning(
-                        f'[RegistrationForm] [User:{self.target.id}] Not able to edit user "{self.target.name}:{self.target.id}" nick to "{name}": {ex}'
-                    )
+        await update_user(self.target, name)
 
     async def _stop(self) -> None:
         """Properly end a registration process by deleting the related pending registration entries."""
@@ -518,3 +495,64 @@ class RegistrationForm:
                 self.pending_registration_emails.remove(self.email)
             except ValueError:
                 pass
+
+
+class AdminAddUserModal(disnake.ui.Modal):
+
+    _email_default_value = "N/A"
+
+    def __init__(self, user: disnake.User) -> None:
+        self.user = user
+        components = [
+            disnake.ui.TextInput(label="Prenom + Nom", custom_id="name"),
+            disnake.ui.TextInput(label="Adresse email (optional)", custom_id="email", required=False),
+        ]
+        super().__init__(title=f"Ajout de l'utilisateur id = {user.id}", components=components, timeout=10 * 60)
+
+    async def callback(self, interaction: disnake.ModalInteraction, /) -> None:
+        await interaction.response.defer(ephemeral=True)
+        name = interaction.text_values.get("name")
+        email = interaction.text_values.get("email", self._email_default_value)
+        GoogleSheetManager.set_user(self.user, name, email)
+        await interaction.edit_original_response(
+            embed=disnake.Embed(
+                description=f"{self.user.mention} a bien été ajouté à la base de donnée", color=disnake.Color.green()
+            )
+        )
+
+        await update_user(self.user, name)
+
+
+class AdminEditUserModal(disnake.ui.Modal):
+
+    _email_default_value = "N/A"
+
+    def __init__(self, user: disnake.User) -> None:
+        self.user = user
+        user_data = GoogleSheetManager.ulb_users.get(user)
+        components = [
+            disnake.ui.TextInput(label="Prenom + Nom", custom_id="name", value=user.data.name),
+            disnake.ui.TextInput(
+                label="Adresse email (optional)",
+                custom_id="email",
+                value=user_data.email if user_data.email != self._email_default_value else None,
+                required=False,
+            ),
+        ]
+
+        super().__init__(title=f"Mis à jour de l'utilisateur id = {user.id}", components=components, timeout=10 * 60)
+
+    async def callback(self, interaction: disnake.ModalInteraction, /) -> None:
+        await interaction.response.defer(ephemeral=True)
+        name = interaction.text_values.get("name")
+        email = interaction.text_values.get("email", self._email_default_value)
+        GoogleSheetManager.set_user(self.user, name, email)
+
+        await interaction.edit_original_response(
+            embed=disnake.Embed(
+                description=f"{self.user.mention} a bien été mis à jour dans la base de donnée",
+                color=disnake.Color.green(),
+            )
+        )
+
+        await update_user(self.user, name)
