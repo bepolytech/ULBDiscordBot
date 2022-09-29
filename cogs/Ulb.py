@@ -55,6 +55,7 @@ class Ulb(commands.Cog):
         name="setup",
         description="Sélectionner le role ULB de ce serveur.",
         default_member_permissions=disnake.Permissions.all(),
+        dm_permission=False,
     )
     async def setup(
         self, inter: ApplicationCommandInteraction, role_ulb: disnake.Role = commands.Param(description='Le role "ULB"')
@@ -96,7 +97,6 @@ class Ulb(commands.Cog):
 
         await utils.update_guild(inter.guild, role=role_ulb)
 
-    # FIXME: Event is not triggered ?
     @commands.Cog.listener("on_member_join")
     async def on_member_join(self, member: disnake.Member):
         await self.wait_data()
@@ -116,7 +116,7 @@ class Ulb(commands.Cog):
             )
             await member.send(
                 embed=disnake.Embed(
-                    title=f"__Bienvenu sur le server **{member.guild.name}**__",
+                    title=f"Bienvenu sur le server __**{member.guild.name}**__",
                     description="""Ce serveur est reservé aux membre de l'ULB. Pour acceder à ce serveur, tu dois vérifier ton identité avec ton addresse email **ULB** en utilisant la commande **"/email"**.""",
                     color=disnake.Color.teal(),
                 ).set_thumbnail(url=self.bot.ULB_image)
@@ -127,9 +127,8 @@ class Ulb(commands.Cog):
             )
             await utils.update_member(member)
 
-    # FIXME: Event is not triggered ?
     @commands.Cog.listener("on_guild_join")
-    async def on_member_join(self, guild: disnake.Guild):
+    async def on_guild_join(self, guild: disnake.Guild):
 
         logging.trace(f"[Cog:Ulb] [Guild:{guild.id}] Bot joined a new guild")
         # Autodetect ULB role for guild that follow the ULB guild template
@@ -140,6 +139,21 @@ class Ulb(commands.Cog):
                     logging.info(
                         f"[Cog:Ulb] New guild following ULB template joined. Role {role.name}:{role.id} automatically set as ULB role."
                     )
+
+    # TODO: add on_guild_update to send a warning message when deleting or changing permissions state of @ulb
+    @commands.Cog.listener("on_guild_update")
+    async def on_guild_update(self, before: disnake.Guild, after: disnake.Guild):
+        pass
+
+    # TODO: add on_guild_remove to remove guild entry when bot is removed from a guild
+    @commands.Cog.listener("on_guild_remove")
+    async def on_guild_remove(self, guild: disnake.Guild):
+        pass
+
+    # TODO: add on_resumed to check all guild, similarly to on_ready
+    @commands.Cog.listener("on_resumed")
+    async def on_resumed(self):
+        pass
 
 
 def setup(bot: commands.InteractionBot):
