@@ -18,7 +18,7 @@ from .utils import update_user
 from bot import Bot
 
 
-class RegistrationFormaNotSetError(Exception):
+class RegistrationNotSetError(Exception):
     """The Exception to be raise when the RegistrationForm class is used without have been set"""
 
     def __init__(self, *args: object) -> None:
@@ -54,22 +54,22 @@ class CallbackModal(disnake.ui.Modal):
         await self.callback_coro(interaction)
 
 
-class RegistrationForm:
-    """Represent the RegistrationForm
+class Registration:
+    """Represent the Registration class
 
 
     Classmethods
     ------------
     setup(cog: `Ulb`): `func`
-        Setup the RegistrationForm class. This need to be call before any instantiation
+        Setup the Registration class. This need to be call before any instantiation
     new(inter: `disnake.ApplicationCommandInteraction,` target: `Optional[disnake.User]`): `coro`
-        Create and start a new registration form.
+        Create and start a new registration.
     """
 
     # Config params
     email_domain = "ulb.be"
     token_size = 10
-    token_validity_time = 60  # In sec
+    token_validity_time = 60 * 10  # In sec
     token_nbr_try = 5
     user_timeout_time = 60 * 5  # In sec
 
@@ -79,7 +79,7 @@ class RegistrationForm:
     _contact_user: disnake.User = None
     _set = False
 
-    _current_registrations: Dict[disnake.User, "RegistrationForm"] = {}
+    _current_registrations: Dict[disnake.User, "Registration"] = {}
     _users_timeout: Dict[disnake.User, datetime] = {}
 
     @property
@@ -98,7 +98,7 @@ class RegistrationForm:
 
     @classmethod
     def setup(cls, cog: commands.Cog) -> None:
-        """Setup the RegistrationForm class
+        """Setup the Registration class
 
         Parameters
         ----------
@@ -132,7 +132,7 @@ class RegistrationForm:
             Raise if the RegistrationForm has not been setup.
         """
         if not cls.set:
-            raise RegistrationFormaNotSetError
+            raise RegistrationNotSetError
 
         if not target:
             target = inter.author
@@ -147,7 +147,7 @@ class RegistrationForm:
             )
             return
 
-        new_form = RegistrationForm(target)
+        new_form = Registration(target)
         await new_form._start(inter)
 
     def __init__(self, target: disnake.User) -> None:
@@ -232,7 +232,7 @@ class RegistrationForm:
 
         # Send the message with button
         self.msg = await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
-        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Registration view sent")
+        logging.trace(f"[RegistrationForm] [User:{self.target.id}] Registration view sent")
 
     async def _callback_registration_button(self, inter: disnake.MessageInteraction) -> None:
         """Send the registration modal when the registration button is triggered
@@ -244,7 +244,7 @@ class RegistrationForm:
         """
         self.registration_button.disabled = True
         await inter.response.send_modal(self.info_modal)
-        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Registration modal sent")
+        logging.trace(f"[RegistrationForm] [User:{self.target.id}] Registration modal sent")
 
     async def _callback_info_modal(self, inter: disnake.ModalInteraction) -> None:
         """Check the validity of the email provided to the modal.
@@ -261,23 +261,10 @@ class RegistrationForm:
             The modal interaction
         """
         self.msg = await inter.response.edit_message(embed=self.verification_embed, view=self.registration_view)
-        logging.debug(
+        logging.trace(
             f"[RegistrationForm] [User:{self.target.id}] Registration modal callback with email={inter.text_values.get('email')}"
         )
 
-        # Check email availablility from pending registration
-        if inter.text_values.get("email") in self._current_registration_email:
-            logging.info(
-                f"[RegistrationForm] [User:{self.target.id}] End because email in another pending registration."
-            )
-            self.registration_embed.clear_fields()
-            self.registration_embed.remove_footer().add_field(
-                f"⛔ Adresse email non disponible",
-                value=f"L'adresse email {self.email} est actuellement en cours de vérification par un autre utilisateur...",  # TODO: make a way for the user to be able to register even if someone spam his email
-            )
-            await inter.edit_original_message(embed=self.registration_embed, view=None)
-            await self._stop()
-            return
         self.email = inter.text_values.get("email")
 
         # Check email format validity
@@ -289,7 +276,7 @@ class RegistrationForm:
             or len(splited_mail[1].split(".")[0]) == 0
             or splited_mail[1].split(".")[1] == 0
         ):
-            logging.debug(f"[RegistrationForm] [User:{self.target.id}] Format not valid.")
+            logging.trace(f"[RegistrationForm] [User:{self.target.id}] Format not valid.")
             self.registration_button.disabled = False
             self.registration_embed.clear_fields()
             self.registration_embed.add_field(
@@ -301,7 +288,7 @@ class RegistrationForm:
 
         # Check email domain validity
         if splited_mail[1] != self.email_domain:
-            logging.debug(f"[RegistrationForm] [User:{self.target.id}] Domain not valid.")
+            logging.trace(f"[RegistrationForm] [User:{self.target.id}] Domain not valid.")
             self.registration_button.disabled = False
             self.registration_embed.clear_fields()
             self.registration_embed.add_field(
@@ -314,7 +301,7 @@ class RegistrationForm:
         # Check email availablility from registered users
         for user_data in Database.ulb_users.values():
             if user_data.email == self.email:
-                logging.debug(f"[RegistrationForm] [User:{self.target.id}] End because email not available")
+                logging.trace(f"[RegistrationForm] [User:{self.target.id}] End because email not available")
                 self.registration_embed.clear_fields()
                 self.registration_embed.colour = disnake.Colour.red()
                 self.registration_embed.remove_footer().add_field(
@@ -326,7 +313,7 @@ class RegistrationForm:
                 return
 
         # Valid and available
-        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Email valid and available.")
+        logging.trace(f"[RegistrationForm] [User:{self.target.id}] Email valid and available.")
         await self._start_token_verification_step(inter)
 
     async def _start_token_verification_step(self, inter: disnake.ModalInteraction) -> None:
@@ -379,11 +366,10 @@ class RegistrationForm:
             self.msg = await inter.edit_original_message(
                 embed=self.token_verification_embed, view=self.token_verification_view
             )
-        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token view sent.")
+        logging.trace(f"[RegistrationForm] [User:{self.target.id}] Token view sent.")
         self.token = secrets.token_hex(self.token_size)[: self.token_size]
-        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token={self.token} generate.")
+        logging.trace(f"[RegistrationForm] [User:{self.target.id}] Token generated.")
         EmailManager.send_token(self.email, self.token)
-        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Email sent")
         await asyncio.sleep(self.token_validity_time)
         if self.token:
             self.token = None
@@ -418,7 +404,7 @@ class RegistrationForm:
             The button interaction
         """
         self.token_verification_button.disabled = True
-        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token button callback")
+        logging.trace(f"[RegistrationForm] [User:{self.target.id}] Token button callback")
         await inter.response.send_modal(self.token_verification_modal)
 
     async def _callback_token_verification_modal(self, inter: disnake.ModalInteraction) -> None:
@@ -444,11 +430,11 @@ class RegistrationForm:
 
         self.msg = await inter.response.edit_message(embed=self.verification_embed, view=self.token_verification_view)
         token = inter.text_values.get("token")
-        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token modal callback with token={token}.")
+        logging.trace(f"[RegistrationForm] [User:{self.target.id}] Token modal callback with token={token}.")
 
         # If token invalid
         if token != self.token:
-            logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token invalid")
+            logging.trace(f"[RegistrationForm] [User:{self.target.id}] Token invalid")
             self.nbr_try += 1
 
             # End the registration
@@ -482,7 +468,21 @@ class RegistrationForm:
                 )
             return
 
-        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Token valid")
+        # Check email availablility from registered users again, if the case two user register with the same email at the same time
+        for user_data in Database.ulb_users.values():
+            if user_data.email == self.email:
+                logging.trace(f"[RegistrationForm] [User:{self.target.id}] End because email not available")
+                self.token_verification_embed.clear_fields()
+                self.token_verification_embed.colour = disnake.Colour.red()
+                self.token_verification_embed.remove_footer().add_field(
+                    f"⛔ Adresse email non disponible",
+                    value=f"**{self.email}** est déjà associée à un autre utilisateur discord.\nSi cette adresse email est bien la tienne et que quelqu'un a eu accès à ta boite mail pour se faire passer pour toi, envoie un message à {self._contact_user.mention if self._contact_user else 'un administrateur du serveur.'}.",
+                )
+                await inter.edit_original_message(embed=self.token_verification_embed, view=None)
+                await self._stop()
+                return
+
+        logging.trace(f"[RegistrationForm] [User:{self.target.id}] Token valid")
         await self._register_user_step(inter)
 
     async def _register_user_step(self, inter: disnake.ModalInteraction) -> None:
@@ -497,7 +497,7 @@ class RegistrationForm:
         """
         # Extract name and store the user
         name = " ".join([name.title() for name in self.email.split("@")[0].split(".")])
-        logging.debug(f"[RegistrationForm] [User:{self.target.id}] Extracted name from email= {name}")
+        logging.trace(f"[RegistrationForm] [User:{self.target.id}] Extracted name from email= {name}")
         Database.set_user(self.target, name, self.email)
         await self._stop()
         logging.info(f"[RegistrationForm] [User:{self.target.id}] Registration succeed")

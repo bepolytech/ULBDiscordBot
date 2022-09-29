@@ -38,14 +38,14 @@ async def update_member(member: disnake.Member, *, name: str = None, role: disna
 
     try:
         await member.add_roles(role)
-        logging.debug(f"[Utils:update_user] [User:{member.id}] Set role={role.id} on guild={member.id}")
+        logging.info(f"[Utils:update_user] [User:{member.id}] Set role={role.id} on guild={member.id}")
     except HTTPException as ex:
         logging.error(
             f'[Utils:update_user] [User:{member.id}] Not able to add ulb role "{role.name}:{role.id}" from guild "{member.name}:{member.id}" to ulb user "{member.name}:{member.id}": {ex}'
         )
     try:
         await member.edit(nick=f"{name}")
-        logging.debug(f"[Utils:update_user] [User:{member.id}] Set name on guild={member.id}")
+        logging.info(f"[Utils:update_user] [User:{member.id}] Set name on guild={member.id}")
     except HTTPException as ex:
         logging.warning(
             f'[Utils:update_user] [User:{member.id}] Not able to edit user "{member.name}:{member.id}" nick to "{name}": {ex}'

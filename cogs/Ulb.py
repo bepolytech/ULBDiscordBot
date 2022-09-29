@@ -20,13 +20,16 @@ class Ulb(commands.Cog):
     @commands.Cog.listener("on_ready")
     async def on_ready(self):
         Database.load(self.bot)
-        RegistrationForm.setup(self)
-        logging.info("[Cog:Ulb] Ready")
+        Registration.setup(self)
+        logging.info("[Cog:Ulb] Ready !")
+        logging.info("[Cog:Ulb] Checking all guilds...")
+        await asyncio.gather(*[utils.update_guild(guild, role=role) for guild, role in Database.ulb_guilds.items()])
+        logging.info("[Cog:Ulb] All guilds checked !")
 
     async def wait_data(self) -> None:
         """Async sleep until GoogleSheet is loaded"""
         if not Database.loaded:
-            logging.debug("[Cog:Ulb] Waiting for data to be load from google sheet...")
+            logging.trace("[Cog:Ulb] Waiting for data to be load from google sheet...")
             await asyncio.sleep(1)
         while not Database.loaded:
             await asyncio.sleep(1)
@@ -35,10 +38,10 @@ class Ulb(commands.Cog):
         """Async sleep until GoogleSheet is loaded and RegistrationForm is set"""
         if not Database.loaded:
             await self.wait_data()
-        if not RegistrationForm.set:
-            logging.debug("[Cog:Ulb]  Waiting for registrationForm to be set...")
+        if not Registration.set:
+            logging.trace("[Cog:Ulb]  Waiting for registrationForm to be set...")
             await asyncio.sleep(1)
-        while not RegistrationForm.set:
+        while not Registration.set:
             await asyncio.sleep(1)
 
     @commands.slash_command(name="email", description="Vérifier son adresse mail ULB.")
@@ -46,7 +49,7 @@ class Ulb(commands.Cog):
         await inter.response.defer(ephemeral=True)
         await self.wait_setup()
 
-        await RegistrationForm.new(inter)
+        await Registration.new(inter)
 
     @commands.slash_command(
         name="setup",
@@ -62,9 +65,9 @@ class Ulb(commands.Cog):
         Database.set_guild(inter.guild, role_ulb)
         embed = disnake.Embed(
             title="Setup du role ULB du servers",
-            description=f"Role **ULB** : {role_ulb.mention}",
+            description=f"""> Role **ULB** : {role_ulb.mention}.\n\nLes nouveaux membres seront automatiquement ajoutés à {role_ulb.mention} et renommer avec leur vrai nom une fois qu'ils auront vérifiés leur adresse email ULB.""",
             color=disnake.Color.green(),
-        ).set_footer(text='Utilise "/role_update" pour mettre à jour les roles des membres de ce serveur.')
+        )
 
         # Add warning if @everyone or @ulb has the permisions to edit their own nickname
         roles_warning = []
@@ -87,45 +90,26 @@ class Ulb(commands.Cog):
 
         await inter.edit_original_message(embed=embed)
 
-    @commands.slash_command(
-        name="update",
-        description="Mettre à jour les roles des members de ce serveur (uniquement ajoute les nouveaux membres).",
-        default_member_permissions=disnake.Permissions.all(),
-    )
-    async def update(self, inter: ApplicationCommandInteraction):
-        await inter.response.defer(ephemeral=True)
-        await self.wait_data()
-
-        ulb_role = Database.ulb_guilds.get(inter.guild, None)
-
-        # Check if ulb role is set
-        if not ulb_role:
-            await inter.edit_original_message(
-                embed=disnake.Embed(
-                    description="""Le role **ULB** de ce serveur n'est pas encore setup ! Utilise **"/role setup"** pour le sélectionner.""",
-                    color=disnake.Color.orange(),
-                )
-            )
-
-        # Update the guild
-        await utils.update_guild(inter.guild, role=ulb_role)
-        await inter.edit_original_message(
-            embed=disnake.Embed(description="Mise à jour finie !", color=disnake.Color.green())
-        )
+        await utils.update_guild(inter.guild, role=role_ulb)
 
     # FIXME: Event is not triggered ?
     @commands.Cog.listener("on_member_join")
     async def on_member_join(self, member: disnake.Member):
         await self.wait_data()
+        logging.trace(f"[Cog:Ulb] [Guild:{member.guild.id}] [User:{member.id}] user joined")
 
         ulb_role = Database.ulb_guilds.get(member.guild, None)
         # if ulb_role is None, this mean that the guild is not set
         if not ulb_role:
+            logging.trace(f"[Cog:Ulb] [Guild:{member.guild.id}] [User:{member.id}] Guild is not set. Ending event")
             return
 
         name = Database.ulb_users.get(member, None)
         # If name is None, this mean that the member is not registered yet
         if not name:
+            logging.trace(
+                f"[Cog:Ulb] [Guild:{member.guild.id}] [User:{member.id}] Member not registered yet. Sending message."
+            )
             await member.send(
                 embed=disnake.Embed(
                     title=f"__Bienvenu sur le server **{member.guild.name}**__",
@@ -134,11 +118,16 @@ class Ulb(commands.Cog):
                 ).set_thumbnail(url=self.bot.BEP_image)
             )
         else:
+            logging.trace(
+                f"[Cog:Ulb] [Guild:{member.guild.id}] [User:{member.id}] Member already registered. Updating member."
+            )
             await utils.update_member(member)
 
     # FIXME: Event is not triggered ?
     @commands.Cog.listener("on_guild_join")
     async def on_member_join(self, guild: disnake.Guild):
+
+        logging.trace(f"[Cog:Ulb] [Guild:{guild.id}] Bot joined a new guild")
         # Autodetect ULB role for guild that follow the ULB guild template
         if self.ulb_guil_template_url and self.ulb_guil_template_url in [t.code for t in await guild.templates()]:
             for role in guild.roles:

@@ -121,18 +121,18 @@ class Bot(InteractionBot):
         await self.log_channel.send(embed=disnake.Embed(description=f"```python\n{tb[4050*n:]}```"))
 
     async def on_slash_command(self, interaction: disnake.ApplicationCommandInteraction) -> None:
-        logging.debug(
-            f"Slash command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' started..."
+        logging.trace(
+            f"[Bot] Slash command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' started..."
         )
 
     async def on_user_command(self, interaction: disnake.UserCommandInteraction) -> None:
-        logging.debug(
-            f"User command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' started..."
+        logging.trace(
+            f"[Bot] User command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' started..."
         )
 
     async def on_message_command(self, interaction: disnake.MessageCommandInteraction) -> None:
-        logging.debug(
-            f"Message command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' started..."
+        logging.trace(
+            f"[Bot] Message command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' started..."
         )
 
     async def on_slash_command_error(self, interaction: ApplicationCommandInteraction, error: Exception) -> None:
@@ -145,16 +145,16 @@ class Bot(InteractionBot):
         await self.send_error_log(interaction, error)
 
     async def on_slash_command_completion(self, interaction: disnake.ApplicationCommandInteraction) -> None:
-        logging.debug(
-            f"Slash command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' at '{interaction.created_at}' ended normally"
+        logging.trace(
+            f"[Bot] Slash command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' at '{interaction.created_at}' ended normally"
         )
 
     async def on_user_command_completion(self, interaction: disnake.UserCommandInteraction) -> None:
-        logging.debug(
-            f"User command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' at '{interaction.created_at}' ended normally"
+        logging.trace(
+            f"[Bot] User command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' at '{interaction.created_at}' ended normally"
         )
 
     async def on_message_command_completion(self, interaction: disnake.MessageCommandInteraction) -> None:
-        logging.debug(
-            f"Message command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' at '{interaction.created_at}' ended normally"
+        logging.trace(
+            f"[Bot] Message command '{interaction.application_command.name}:{interaction.id}' from '{interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'}' by '{interaction.author.name}' at '{interaction.created_at}' ended normally"
         )

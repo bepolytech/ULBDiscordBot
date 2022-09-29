@@ -89,16 +89,16 @@ class Database:
             cred_dict["client_id"] = int(os.getenv("GS_CLIENT_ID"))
             creds = ServiceAccountCredentials.from_json_keyfile_dict(cred_dict, cls._scope)
             cls._client = gspread.authorize(creds)
-            logging.info("[GoogleSheet] Google sheet credentials loaded.")
+            logging.info("[Database] Google sheet credentials loaded.")
 
             # Open google sheet
             cls._sheet = cls._client.open_by_url(os.getenv("GOOGLE_SHEET_URL"))
             cls._users_ws = cls._sheet.worksheet("users")
             cls._guilds_ws = cls._sheet.worksheet("guilds")
 
-            logging.info("[GoogleSheet] Spreadsheed loaded")
+            logging.info("[Database] Spreadsheed loaded")
 
-        logging.info("[GoogleSheet] Loading data...")
+        logging.info("[Database] Loading data...")
 
         # Load guilds
         cls.ulb_guilds = {}
@@ -108,16 +108,14 @@ class Database:
                 role = guild.get_role(guild_data.get("role_id", int))
                 if role:
                     cls.ulb_guilds.setdefault(guild, role)
-                    logging.debug(
-                        f"[GoogleSheet] Role {role.name}:{role.id} loaded from guild {guild.name}:{guild.id} "
-                    )
+                    logging.trace(f"[Database] Role {role.name}:{role.id} loaded from guild {guild.name}:{guild.id} ")
                 else:
                     logging.warning(
-                        f"[GoogleSheet] Not able to find role from id={guild_data.get('role_id', int)} in guild {guild.name}:{guild.id}."
+                        f"[Database] Not able to find role from id={guild_data.get('role_id', int)} in guild {guild.name}:{guild.id}."
                     )
             else:
                 logging.warning(f"[GoogleSheet] Not able to find guild from id={guild_data.get('guild_id', int)}.")
-        logging.info(f"[GoogleSheet] Found {len(cls.ulb_guilds)} guilds.")
+        logging.info(f"[Database] Found {len(cls.ulb_guilds)} guilds.")
 
         # Load users
         cls.ulb_users = {}
@@ -125,12 +123,12 @@ class Database:
             user = bot.get_user(user_data.get("user_id", int))
             if user:
                 cls.ulb_users.setdefault(user, UlbUser(user_data.get("name", str), user_data.get("email", str)))
-                logging.debug(
-                    f"[GoogleSheet] User {user.name}:{user.id} loaded with name={user_data.get('name')} and email={user_data.get('email')}"
+                logging.trace(
+                    f"[Database] User {user.name}:{user.id} loaded with name={user_data.get('name')} and email={user_data.get('email')}"
                 )
             else:
-                logging.warning(f"[GoogleSheet] Not able to find user from id={user_data.get('user_id',int)}.")
-        logging.info(f"[GoogleSheet] Found {len(cls.ulb_users)} users.")
+                logging.warning(f"[Database] Not able to find user from id={user_data.get('user_id',int)}.")
+        logging.info(f"[Database] Found {len(cls.ulb_users)} users.")
 
         cls._loaded = True
 
@@ -150,15 +148,15 @@ class Database:
         user_cell: gspread.cell.Cell = cls._users_ws.find(str(user_id), in_column=1)
         await asyncio.sleep(0.1)
         if user_cell:
-            logging.debug(f"[GoogleSheet] {user_id=} found in WS at row={user_cell.row}")
+            logging.trace(f"[Database] {user_id=} found")
             cls._users_ws.update_cell(user_cell.row, 2, name)
             await asyncio.sleep(0.1)
             cls._users_ws.update_cell(user_cell.row, 3, email)
-            logging.debug(f"[GoogleSheet] {user_id=} updated with {name=} and {email=}")
+            logging.info(f"[Database] {user_id=} updated with {name=} and {email=}")
         else:
-            logging.debug(f"[GoogleSheet] {user_id=} not found in WS")
+            logging.trace(f"[Database] {user_id=} not found")
             cls._users_ws.append_row(values=[str(user_id), name, email])
-            logging.debug(f"[GoogleSheet] {user_id=} added with {name=} and {email=}")
+            logging.info(f"[Database] {user_id=} added with {name=} and {email=}")
 
     @classmethod
     def set_user(cls, user: disnake.User, name: str, email: str):
@@ -195,10 +193,10 @@ class Database:
         """
         user_cell: gspread.cell.Cell = cls._users_ws.find(str(user_id), in_column=1)
         await asyncio.sleep(0.1)
-        logging.debug(f"[GoogleSheet] {user_id=} found in WS at row={user_cell.row}")
+        logging.trace(f"[Database] {user_id=} found")
         cls._users_ws.delete_row(user_cell.row)
         await asyncio.sleep(0.1)
-        logging.debug(f"[GoogleSheet] {user_id=} deleted from google sheet")
+        logging.info(f"[Database] {user_id=} deleted.")
 
     @classmethod
     def delete_user(cls, user: disnake.User):
@@ -232,13 +230,13 @@ class Database:
         guild_cell: gspread.cell.Cell = cls._guilds_ws.find(str(guild_id), in_column=1)
         await asyncio.sleep(0.1)
         if guild_cell:
-            logging.debug(f"[GoogleSheet] {guild_id=} found in WS.")
+            logging.trace(f"[Database] {guild_id=} found.")
             cls._guilds_ws.update_cell(guild_cell.row, 2, str(role_id))
-            logging.debug(f"[GoogleSheet] {guild_id=} update with {role_id=}.")
+            logging.info(f"[Database] {guild_id=} update with {role_id=}.")
         else:
-            logging.debug(f"[GoogleSheet] {guild_id=} not found in WS.")
+            logging.trace(f"[Database] {guild_id=} not found.")
             cls._guilds_ws.append_row(values=[str(guild_id), str(role_id)])
-            logging.debug(f"[GoogleSheet] {guild_id=} added with {role_id=}.")
+            logging.info(f"[Database] {guild_id=} added with {role_id=}.")
 
     @classmethod
     def set_guild(cls, guild: disnake.Guild, role: disnake.Role):

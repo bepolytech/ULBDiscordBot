@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import logging
 import os
 import smtplib
 import ssl
@@ -79,3 +80,4 @@ class EmailManager:
             server.login(cls._email_addr, cls._auth_token)
             content: str = cls._content(target_email, token)
             server.sendmail(cls._email_addr, target_email, content)
+            logging.trace(f"[EMAIL] Token email sent to {target_email}")

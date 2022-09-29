@@ -24,7 +24,61 @@ from dotenv import load_dotenv
 
 from bot import Bot
 
+
+def addLoggingLevel(levelName: str, levelNum: int, methodName: str = None):
+    """
+    Comprehensively adds a new logging level to the `logging` module and the
+    currently configured logging class.
+
+    `levelName` becomes an attribute of the `logging` module with the value
+    `levelNum`. `methodName` becomes a convenience method for both `logging`
+    itself and the class returned by `logging.getLoggerClass()` (usually just
+    `logging.Logger`). If `methodName` is not specified, `levelName.lower()` is
+    used.
+
+    To avoid accidental clobberings of existing attributes, this method will
+    raise an `AttributeError` if the level name is already an attribute of the
+    `logging` module or if the method name is already present
+
+    Example
+    -------
+    >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
+    >>> logging.getLogger(__name__).setLevel("TRACE")
+    >>> logging.getLogger(__name__).trace('that worked')
+    >>> logging.trace('so did this')
+    >>> logging.TRACE
+    5
+
+    """
+    if not methodName:
+        methodName = levelName.lower()
+
+    if hasattr(logging, levelName):
+        raise AttributeError("{} already defined in logging module".format(levelName))
+    if hasattr(logging, methodName):
+        raise AttributeError("{} already defined in logging module".format(methodName))
+    if hasattr(logging.getLoggerClass(), methodName):
+        raise AttributeError("{} already defined in logger class".format(methodName))
+
+    # This method was inspired by the answers to Stack Overflow post
+    # http://stackoverflow.com/q/2183233/2988730, especially
+    # http://stackoverflow.com/a/13638084/2988730
+    def logForLevel(self, message, *args, **kwargs):
+        if self.isEnabledFor(levelNum):
+            self._log(levelNum, message, args, **kwargs)
+
+    def logToRoot(message, *args, **kwargs):
+        logging.log(levelNum, message, *args, **kwargs)
+
+    logging.addLevelName(levelNum, levelName)
+    setattr(logging, levelName, levelNum)
+    setattr(logging.getLoggerClass(), methodName, logForLevel)
+    setattr(logging, methodName, logToRoot)
+
+
 if __name__ == "__main__":
+
+    addLoggingLevel("TRACE", logging.INFO - 5)
 
     logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
     rootLogger = logging.getLogger()
@@ -32,7 +86,7 @@ if __name__ == "__main__":
 
     consoleHandler = logging.StreamHandler()
     consoleHandler.setFormatter(logFormatter)
-    consoleHandler.setLevel(logging.INFO)
+    consoleHandler.setLevel(logging.TRACE)
     rootLogger.addHandler(consoleHandler)
 
     if platform.system() == "Linux":
@@ -43,7 +97,7 @@ if __name__ == "__main__":
             filename="logs/debug.log", mode="w", encoding="UTF-8", delay=True, backupCount=5
         )
         fileInfoHandler.setFormatter(logFormatter)
-        fileInfoHandler.setLevel(logging.INFO)
+        fileInfoHandler.setLevel(logging.TRACE)
         fileInfoHandler.doRollover()
         rootLogger.addHandler(fileInfoHandler)
         fileDebugHandler.setFormatter(logFormatter)
