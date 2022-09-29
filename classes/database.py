@@ -148,13 +148,13 @@ class Database:
         user_cell: gspread.cell.Cell = cls._users_ws.find(str(user_id), in_column=1)
         await asyncio.sleep(0.1)
         if user_cell:
-            logging.trace(f"[Database] {user_id=} found")
+            logging.debug(f"[Database] {user_id=} found")
             cls._users_ws.update_cell(user_cell.row, 2, name)
             await asyncio.sleep(0.1)
             cls._users_ws.update_cell(user_cell.row, 3, email)
             logging.info(f"[Database] {user_id=} updated with {name=} and {email=}")
         else:
-            logging.trace(f"[Database] {user_id=} not found")
+            logging.debug(f"[Database] {user_id=} not found")
             cls._users_ws.append_row(values=[str(user_id), name, email])
             logging.info(f"[Database] {user_id=} added with {name=} and {email=}")
 
@@ -230,11 +230,11 @@ class Database:
         guild_cell: gspread.cell.Cell = cls._guilds_ws.find(str(guild_id), in_column=1)
         await asyncio.sleep(0.1)
         if guild_cell:
-            logging.trace(f"[Database] {guild_id=} found.")
+            logging.debug(f"[Database] {guild_id=} found.")
             cls._guilds_ws.update_cell(guild_cell.row, 2, str(role_id))
             logging.info(f"[Database] {guild_id=} update with {role_id=}.")
         else:
-            logging.trace(f"[Database] {guild_id=} not found.")
+            logging.debug(f"[Database] {guild_id=} not found.")
             cls._guilds_ws.append_row(values=[str(guild_id), str(role_id)])
             logging.info(f"[Database] {guild_id=} added with {role_id=}.")
 
