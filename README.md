@@ -20,7 +20,7 @@ pip install -r requirements.txt
 
 ### Install with docker
 
-TODO
+TODO : Add docker hub link and cmd
 
 ## 🤖 Discord Bot
 
