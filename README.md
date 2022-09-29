@@ -22,6 +22,11 @@ pip install -r requirements.txt
 
 TODO : Add docker hub link and cmd
 
+> OR :
+> ```bash
+> docker build . -t ulbdiscordbot
+> ```
+
 ## 🤖 Discord Bot
 
 ### Creation
@@ -130,7 +135,8 @@ python3 main.py
 docker run --env-file=.env ulbdiscordbot
 ```
 
-> OR ?
+> OR :  
+> if image not built :
 > ```bash
 > docker-compose up -d --build
 > ```
