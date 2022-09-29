@@ -132,7 +132,7 @@ docker run --env-file=.env ulbdiscordbot
 
 > OR ?
 > ```bash
-> docker-compose up -d
+> docker-compose up -d --build
 > ```
 
 ## 💠 Bot usage
