@@ -11,5 +11,5 @@ services:
     env_file:
       - .env
     volumes:
-      - .:.:rw
+      - ./:/ulbdiscordbot:rw
     #command: python main.py
