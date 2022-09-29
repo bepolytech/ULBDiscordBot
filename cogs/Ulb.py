@@ -67,7 +67,7 @@ class Ulb(commands.Cog):
             title="Setup du role ULB du servers",
             description=f"""> Role **ULB** : {role_ulb.mention}.\n\nLes nouveaux membres seront automatiquement ajoutés à {role_ulb.mention} et renommer avec leur vrai nom une fois qu'ils auront vérifiés leur adresse email ULB.""",
             color=disnake.Color.green(),
-        )
+        ).set_thumbnail(url=Bot.ULB_image)
 
         # Add warning if @everyone or @ulb has the permisions to edit their own nickname
         roles_warning = []
@@ -79,13 +79,17 @@ class Ulb(commands.Cog):
             embed.add_field(
                 name="⚠️",
                 value=" et ".join(roles_warning)
-                + " ont la permission de changer leur propre pseudo.\nRetirez ces permissions si vous voulez que les membres soit obligés de garder leur vrai nom.",
+                + " ont la permission de changer leur propre pseudo.\nRetirez cette permission si vous voulez que les membres soit obligés de garder leur vrai nom.",
+            ).set_footer(
+                text="Vous pouvez réutiliser cette commande avec le même role pour vérifier l'état des permissions."
             )
         # Add warning if the role order does not allow the bot to edit the nickname of @ulb
         if inter.me.top_role <= role_ulb:
             embed.add_field(
                 name="⚠️",
                 value=f"Le role {inter.me.mention} doit être au dessus de {role_ulb.mention} pour pouvoir changer leur pseudo, ce qui n'est pas le cas actuellement !",
+            ).set_footer(
+                text="Vous pouvez réutiliser cette commande avec le même role pour vérifier l'état des permissions."
             )
 
         await inter.edit_original_message(embed=embed)
@@ -115,7 +119,7 @@ class Ulb(commands.Cog):
                     title=f"__Bienvenu sur le server **{member.guild.name}**__",
                     description="""Ce serveur est reservé aux membre de l'ULB. Pour acceder à ce serveur, tu dois vérifier ton identité avec ton addresse email **ULB** en utilisant la commande **"/email"**.""",
                     color=disnake.Color.teal(),
-                ).set_thumbnail(url=self.bot.BEP_image)
+                ).set_thumbnail(url=self.bot.ULB_image)
             )
         else:
             logging.trace(

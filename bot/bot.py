@@ -33,6 +33,7 @@ from disnake.ext.commands import InteractionBot
 class Bot(InteractionBot):
 
     BEP_image = "https://i.imgur.com/BHgic3o.png"
+    ULB_image = "https://i.imgur.com/0VLBhVJ.png"
 
     def __init__(self, logger, logFormatter):
         self.logger = logger

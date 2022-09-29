@@ -12,9 +12,6 @@ from classes.registration import AdminAddUserModal
 from classes.registration import AdminEditUserModal
 
 
-# TODO: add a ways to configure generic parameters (registration timeout, toke size, ...) directly with the discord bot commands (local .json file ?)
-
-
 class Admin(commands.Cog):
     def __init__(self, bot: Bot):
         """Initialize the cog"""
@@ -47,8 +44,12 @@ class Admin(commands.Cog):
     async def user(self, inter):
         pass
 
-    @user.sub_command(name="add", description="Ajouter un utilisateur discord.")  # Todo: separate ?
-    async def user_set(self, inter: disnake.ApplicationCommandInteraction, user_id: str):
+    @user.sub_command(name="add", description="Ajouter un utilisateur discord.")
+    async def user_set(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        user_id: str = commands.Param(description="L'id discord de l'utilisateur à ajouter."),
+    ):
         user = self.bot.get_user(int(user_id))
         if not user:
             await inter.response.send_message(
@@ -61,7 +62,11 @@ class Admin(commands.Cog):
         await inter.response.send_modal(AdminAddUserModal(user))
 
     @user.sub_command(name="edit", description="Editer un utilisateur ULB.")
-    async def user_edit(self, inter: disnake.ApplicationCommandInteraction, user_id: str):
+    async def user_edit(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        user_id: str = commands.Param(description="L'id discord de l'utilisateur ULB à éditer."),
+    ):
         user = self.bot.get_user(int(user_id))
 
         if not user:
@@ -84,7 +89,13 @@ class Admin(commands.Cog):
         await inter.response.send_modal(AdminEditUserModal(user))
 
     @user.sub_command(name="info", description="Voir les informations d'un utilisateur enregistré")
-    async def user_info(self, inter: disnake.ApplicationCommandInteraction, user_id: str):
+    async def user_info(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        user_id: str = commands.Param(
+            description="L'id discord de l'utilisateur ULB dont vous voulez voir les informations."
+        ),
+    ):
         user = self.bot.get_user(int(user_id))
         user_data = Database.ulb_users.get(user)
         guilds_name: List[str] = [f"`{guild.name}`" for guild in Database.ulb_guilds.keys() if user in guild.members]
@@ -98,8 +109,12 @@ class Admin(commands.Cog):
         )
 
     @user.sub_command(name="delete", description="Supprimer un utilisateur enregistré")
-    async def user_delete(self, inter: disnake.ApplicationCommandInteraction, user_id: str, name: str):
-
+    async def user_delete(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        user_id: str = commands.Param(description="L'id discord de l'utilisateur ULB à supprimer."),
+        name: str = commands.Param(description="Le nom ULB de l'utilisateur ULB à supprimer (pour confirmation)"),
+    ):
         user = self.bot.get_user(int(user_id))
         if not user:
             await inter.response.send_message(

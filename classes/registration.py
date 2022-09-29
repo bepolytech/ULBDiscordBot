@@ -112,7 +112,7 @@ class Registration:
         """
         if Database.loaded == False:
             raise DatabaseNotLoadedError
-        cls.contact_user = cog.bot.get_user(int(os.getenv("CONTACT_USER_ID")))
+        cls.contact_user = cog.bot.get_user(int(os.getenv("CONTACT_USER_ID")))  # FIXME: user never found
         cls.set = True
 
     @classmethod
@@ -143,7 +143,7 @@ class Registration:
                     title=cls._title,
                     description=f"Vous avez récement dépassé le nombre de tentative de vérification de votre adresse email.\nVous pourrez à nouveau essayer dans {(cls.user_timeout_time - (cls._users_timeout.get(target).second - datetime.now().second))//60} min",
                     color=disnake.Colour.orange(),
-                ).set_thumbnail(Bot.BEP_image)
+                ).set_thumbnail(Bot.ULB_image)
             )
             return
 
@@ -180,7 +180,7 @@ class Registration:
                     title=self._title,
                     description=f"⛔ Tu es déjà associé à l'adresse email suivante : **{ulb_user.email}**.",
                     color=disnake.Colour.dark_orange(),
-                ).set_thumbnail(Bot.BEP_image)
+                ).set_thumbnail(Bot.ULB_image)
             )
             return
 
@@ -208,7 +208,7 @@ class Registration:
             title=self._title,
             description="> Ce serveur est réservé aux étudiants de l'ULB.\n> Pour accéder à ce serveur, tu dois vérifier ton identité avec ton addresse email **ULB**.",
             color=self._color,
-        ).set_thumbnail(Bot.BEP_image)
+        ).set_thumbnail(Bot.ULB_image)
         self.registration_view = disnake.ui.View()
         self.registration_button = disnake.ui.Button(
             label="Vérifier son identité", emoji="📧", style=disnake.ButtonStyle.primary
@@ -228,7 +228,7 @@ class Registration:
         )
         self.verification_embed = disnake.Embed(
             title=self._title, description=f"Vérification en cours...", color=self._color
-        ).set_thumbnail(url=Bot.BEP_image)
+        ).set_thumbnail(url=Bot.ULB_image)
 
         # Send the message with button
         self.msg = await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
@@ -333,7 +333,7 @@ class Registration:
                 description=f"""Un token à été envoyé à l'addresse email ***{self.email}***.""",
                 color=self._color,
             )
-            .set_thumbnail(url=Bot.BEP_image)
+            .set_thumbnail(url=Bot.ULB_image)
             .set_footer(text=f"""Le token est valide pendant {self.token_validity_time//60} minutes.""")
         )
         self.token_verification_view = disnake.ui.View()
@@ -383,7 +383,7 @@ class Registration:
             title=self._title,
             description="""⚠️ Le token à expiré.\nDemandez un nouveau token ci-dessous.""",
             color=disnake.Colour.orange(),
-        ).set_thumbnail(url=Bot.BEP_image)
+        ).set_thumbnail(url=Bot.ULB_image)
         self.token_timeout_view = disnake.ui.View()
         self.token_timeout_button = disnake.ui.Button(
             label="Renvoyer un token", emoji="📧", style=disnake.ButtonStyle.primary
@@ -508,7 +508,7 @@ class Registration:
                 title=f"✅ {self._title}",
                 description="Ton addresse mail **ULB** est bien vérifiée !\nTu as désormais accès aux serveurs **ULB**",
                 color=disnake.Color.green(),
-            ).set_thumbnail(url=Bot.BEP_image),
+            ).set_thumbnail(url=Bot.ULB_image),
             View=None,
         )
 
