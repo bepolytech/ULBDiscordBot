@@ -98,7 +98,7 @@ class Bot(InteractionBot):
     async def send_error_log(self, interaction: ApplicationCommandInteraction, error: Exception):
         tb = self.tracebackEx(error)
         logging.error(
-            f"{error} raised on command /{interaction.application_command.name} from {interaction.guild.name} #{interaction.channel.name} by {interaction.author.name}.\n{tb}"
+            f"{error} raised on command /{interaction.application_command.name} from {interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'} by {interaction.author.name}.\n{tb}"
         )
         await interaction.send(
             content=self.owner.mention,
@@ -112,7 +112,7 @@ class Bot(InteractionBot):
         await self.log_channel.send(
             embed=disnake.Embed(title=f":x: __** ERROR**__ :x:", description=f"```{error}```").add_field(
                 name=f"Raised on command :",
-                value=f"**/{interaction.application_command.name}:{interaction.id}** from {interaction.guild.name} #{interaction.channel.mention} by {interaction.author.mention} at {interaction.created_at} with options\n```{interaction.filled_options}```"
+                value=f"**/{interaction.application_command.name}:{interaction.id}** from {interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'} by {interaction.author.mention} at {interaction.created_at} with options\n```{interaction.filled_options}```"
                 + (f" and target\n``'{interaction.target}``'." if interaction.target else "."),
             )
         )
