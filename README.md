@@ -130,6 +130,11 @@ python3 main.py
 docker run --env-file=.env ulbdiscordbot
 ```
 
+> OR ?
+> ```bash
+> docker-compose up -d
+> ```
+
 ## 💠 Bot usage
 
 * `/role setup`

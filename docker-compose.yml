@@ -1,0 +1,15 @@
+# TODO, AND NEED TO TEST
+
+version: '3.7' 
+services:
+  ULBDiscordBot:
+    name: ULBDiscordBot
+    build : 
+      context: .
+      image: ulbdiscordbot
+      dockerfile: Dockerfile 
+    #ports: 
+    #  - "8000:8000" 
+    volumes: 
+      #- .:/app 
+    command: #python manage.py runserver
