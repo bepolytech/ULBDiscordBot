@@ -17,7 +17,7 @@ class Admin(commands.Cog):
         """Initialize the cog"""
         self.bot: Bot = bot
 
-    @commands.slash_command(name="update", guilds=[int(os.getenv("ADMIN_GUILD_ID"))])
+    @commands.slash_command(name="update", guilds=[int(os.getenv("ADMIN_GUILD_ID"))], dm_permission=False)
     async def update(self, inter):
         pass
 
@@ -40,7 +40,7 @@ class Admin(commands.Cog):
             embed=disnake.Embed(description="All servers updated !", color=disnake.Color.green())
         )
 
-    @commands.slash_command(name="user", guilds=[int(os.getenv("ADMIN_GUILD_ID"))])
+    @commands.slash_command(name="user", guilds=[int(os.getenv("ADMIN_GUILD_ID"))], dm_permission=False)
     async def user(self, inter):
         pass
 
