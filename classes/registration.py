@@ -3,6 +3,7 @@ import asyncio
 import logging
 import os
 import secrets
+import smtplib
 from datetime import datetime
 from typing import Coroutine
 from typing import Dict
@@ -369,12 +370,26 @@ class Registration:
         logging.trace(f"[RegistrationForm] [User:{self.target.id}] Token view sent.")
         self.token = secrets.token_hex(self.token_size)[: self.token_size]
         logging.trace(f"[RegistrationForm] [User:{self.target.id}] Token generated.")
-        EmailManager.send_token(self.email, self.token)
-        await asyncio.sleep(self.token_validity_time)
-        if self.token:
-            self.token = None
-            logging.info(f"[RegistrationForm] [User:{self.target.id}] Token timeout.")
-            await self._start_token_timeout_step(inter)
+        try:
+            EmailManager.send_token(self.email, self.token)
+        except smtplib.SMTPSenderRefused as ex:
+            logging.error(
+                f"[EMAIL] {type(ex).__name__} occured during token email sending error for email={self.email}: {ex}"
+            )
+            await inter.edit_original_response(
+                embed=self.token_verification_embed.add_field(
+                    name="❌",
+                    value=f"Une erreur s'est produite durant l'envoie de l'email. Si cela se produit à nouveau, veuillez contacter {self._contact_user.mention if self._contact_user else 'un administrateur'}",
+                ),
+                view=None,
+            )
+            await self._stop()
+        else:
+            await asyncio.sleep(self.token_validity_time)
+            if self.token:
+                self.token = None
+                logging.info(f"[RegistrationForm] [User:{self.target.id}] Token timeout.")
+                await self._start_token_timeout_step(inter)
 
     async def _start_token_timeout_step(self, inter: disnake.ApplicationCommandInteraction) -> None:
 
@@ -537,7 +552,7 @@ class AdminAddUserModal(disnake.ui.Modal):
             disnake.ui.TextInput(label="Prenom + Nom", custom_id="name"),
             disnake.ui.TextInput(label="Adresse email (optional)", custom_id="email", required=False),
         ]
-        super().__init__(title=f"Ajout de l'utilisateur id = {user.id}", components=components, timeout=10 * 60)
+        super().__init__(title=f"Ajout d'un utilisateur", components=components, timeout=10 * 60)
 
     async def callback(self, interaction: disnake.ModalInteraction, /) -> None:
         await interaction.response.defer(ephemeral=True)
@@ -550,7 +565,7 @@ class AdminAddUserModal(disnake.ui.Modal):
             )
         )
 
-        await update_user(self.user, name)
+        await update_user(self.user, name=name)
 
 
 class AdminEditUserModal(disnake.ui.Modal):
@@ -570,7 +585,7 @@ class AdminEditUserModal(disnake.ui.Modal):
             ),
         ]
 
-        super().__init__(title=f"Mis à jour de l'utilisateur id = {user.id}", components=components, timeout=10 * 60)
+        super().__init__(title=f"Mis à jour d'un utilisateur", components=components, timeout=10 * 60)
 
     async def callback(self, interaction: disnake.ModalInteraction, /) -> None:
         await interaction.response.defer(ephemeral=True)
