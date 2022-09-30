@@ -40,8 +40,8 @@ class Ulb(commands.Cog):
         while not Registration.set:
             await asyncio.sleep(1)
 
-    @commands.slash_command(name="email", description="Vérifier son adresse mail ULB.")
-    async def email(self, inter: ApplicationCommandInteraction):
+    @commands.slash_command(name="ulb", description="Vérifier son adresse mail ULB.")
+    async def ulb(self, inter: ApplicationCommandInteraction):
         await inter.response.defer(ephemeral=True)
         await self.wait_setup()
 
@@ -57,8 +57,10 @@ class Ulb(commands.Cog):
         self,
         inter: ApplicationCommandInteraction,
         role_ulb: disnake.Role = commands.Param(description='Le role "ULB" à donner aux membres vérifiés.'),
-        rename: bool = commands.Param(
-            description="Est-ce que les membres doivent être renommer avec leur vrai nom.", default=False
+        rename: str = commands.Param(
+            description="Est-ce que les membres doivent être renommer avec leur vrai nom.",
+            default="Oui",
+            choices=["Non", "Oui"],
         ),
     ):
 
@@ -75,12 +77,14 @@ class Ulb(commands.Cog):
         await inter.response.defer(ephemeral=True)
         await self.wait_data()
 
+        rename = rename == "Oui"  # Convert from str to bool
+
         Database.set_guild(inter.guild, role_ulb, rename)
         embed = disnake.Embed(
             title="Setup du role ULB du servers",
-            description=f"""> Role **ULB** : {role_ulb.mention}.\n\nLes nouveaux membres seront automatiquement ajoutés à {role_ulb.mention}"""
-            + (" et renommés avec leur vrai nom" if rename else " ")
-            + "une fois qu'ils auront vérifiés leur adresse email ULB.",
+            description=f"""✅ Setup confirmé !\n\n> Les nouveaux membres seront automatiquement ajoutés à {role_ulb.mention}"""
+            + (" et renommés avec leur vrai nom " if rename else " ")
+            + "une fois qu'ils auront vérifiés leur adresse email **ULB**.",
             color=disnake.Color.green(),
         ).set_thumbnail(url=Bot.ULB_image)
 
@@ -128,7 +132,7 @@ class Ulb(commands.Cog):
             await member.send(
                 embed=disnake.Embed(
                     title=f"Bienvenu sur le server __**{member.guild.name}**__",
-                    description="""Ce serveur est reservé aux membre de l'ULB.\nPour acceder à ce serveur, tu dois vérifier ton identité avec ton addresse email **ULB** en utilisant la commande **"/email"**.""",
+                    description="""Ce serveur est reservé aux membre de l'ULB.\nPour acceder à ce serveur, tu dois vérifier ton identité avec ton addresse email **ULB** en utilisant la commande **"/ulb"**.""",
                     color=disnake.Color.teal(),
                 ).set_thumbnail(url=self.bot.ULB_image)
             )
