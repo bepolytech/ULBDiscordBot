@@ -7,7 +7,7 @@ from disnake.ext import commands
 
 from bot import Bot
 from classes import Database
-from classes import update_guild
+from classes import utils
 from classes.registration import AdminAddUserModal
 from classes.registration import AdminEditUserModal
 
@@ -33,8 +33,7 @@ class Admin(commands.Cog):
     async def update_guild(self, inter: disnake.ApplicationCommandInteraction):
         await inter.response.defer(ephemeral=True)
 
-        for guild, role in Database.ulb_guilds.items():
-            await update_guild(guild, role)
+        await utils.update_all_guilds()
 
         await inter.edit_original_response(
             embed=disnake.Embed(description="All servers updated !", color=disnake.Color.green())

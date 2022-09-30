@@ -8,8 +8,39 @@ import disnake
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-from .ulbUser import UlbUser
 from bot import Bot
+
+
+class UlbUser:
+    """Represent an UlbUser
+
+    Parameters
+    ----------
+    name: `str`
+        The name of the user
+    email: `str`
+        The ulb email address of the user
+    """
+
+    def __init__(self, name: str, email: str):
+        self.name: str = name
+        self.email: str = email
+
+
+class UlbGuild:
+    """Represent an UlbGuild
+
+    Parameters
+    ----------
+    role: `disnake.Role`
+        The @ULB role of the guild
+    rename: `bool`
+        If the guild want to force rename of not
+    """
+
+    def __init__(self, role: disnake.Role, rename: bool = True) -> None:
+        self.role: disnake.Role = role
+        self.rename: bool = rename
 
 
 class DatabaseNotLoadedError(Exception):
@@ -50,7 +81,7 @@ class Database:
     _sheet: gspread.Spreadsheet = None
     _users_ws: gspread.Worksheet = None
     _guilds_ws: gspread.Worksheet = None
-    ulb_guilds: Dict[disnake.Guild, disnake.Role] = None
+    ulb_guilds: Dict[disnake.Guild, UlbGuild] = None
     ulb_users: Dict[disnake.User, UlbUser] = None
     _loaded = False
 
@@ -103,12 +134,15 @@ class Database:
         # Load guilds
         cls.ulb_guilds = {}
         for guild_data in cls._guilds_ws.get_all_records():
-            guild = bot.get_guild(guild_data.get("guild_id", int))
+            guild: disnake.Guild = bot.get_guild(guild_data.get("guild_id", int))
             if guild:
-                role = guild.get_role(guild_data.get("role_id", int))
+                role: disnake.Role = guild.get_role(guild_data.get("role_id", int))
+                rename: bool = True if guild_data.get("rename", str) == "TRUE" else False
                 if role:
-                    cls.ulb_guilds.setdefault(guild, role)
-                    logging.trace(f"[Database] Role {role.name}:{role.id} loaded from guild {guild.name}:{guild.id} ")
+                    cls.ulb_guilds.setdefault(guild, UlbGuild(role, rename))
+                    logging.trace(
+                        f"[Database] Role {role.name}:{role.id} loaded from guild {guild.name}:{guild.id} with {rename=}"
+                    )
                 else:
                     logging.warning(
                         f"[Database] Not able to find role from id={guild_data.get('role_id', int)} in guild {guild.name}:{guild.id}."
@@ -180,16 +214,12 @@ class Database:
 
     @classmethod
     async def _delete_user_task(cls, user_id: int):
-        """Coroutine task called by `set_user()` to add or update ulb user informations on the google sheet
+        """Coroutine task called by `delete_user()` to delete ulb user informations from the google sheet
 
         Parameters
         ----------
         user_id : `int`
             The user id
-        name : `str`
-            The name
-        email : `str`
-            The email address
         """
         user_cell: gspread.cell.Cell = cls._users_ws.find(str(user_id), in_column=1)
         await asyncio.sleep(0.1)
@@ -215,7 +245,7 @@ class Database:
         asyncio.create_task(cls._delete_user_task(user.id))
 
     @classmethod
-    async def _set_guild_task(cls, guild_id: int, role_id: int):
+    async def _set_guild_task(cls, guild_id: int, role_id: int, rename: bool):
         """Coroutine task called by `set_guilds()` to add or update ulb guild informations on the google sheet.
 
         It create a task without waiting for it to end, in order to not decrease the global performance of the Bot.
@@ -232,14 +262,15 @@ class Database:
         if guild_cell:
             logging.debug(f"[Database] {guild_id=} found.")
             cls._guilds_ws.update_cell(guild_cell.row, 2, str(role_id))
-            logging.info(f"[Database] {guild_id=} update with {role_id=}.")
+            cls._guilds_ws.update_cell(guild_cell.row, 3, rename)
+            logging.info(f"[Database] {guild_id=} update with {role_id=} and {rename=}.")
         else:
             logging.debug(f"[Database] {guild_id=} not found.")
-            cls._guilds_ws.append_row(values=[str(guild_id), str(role_id)])
-            logging.info(f"[Database] {guild_id=} added with {role_id=}.")
+            cls._guilds_ws.append_row(values=[str(guild_id), str(role_id), rename])
+            logging.info(f"[Database] {guild_id=} added with {role_id=} and {rename=}.")
 
     @classmethod
-    def set_guild(cls, guild: disnake.Guild, role: disnake.Role):
+    def set_guild(cls, guild: disnake.Guild, role: disnake.Role, rename: bool):
         """Add or update ulb guild informations on the google sheet.
 
         It create a task without waiting for it to end, in order to not decrease the global performance of the Bot.
@@ -253,5 +284,37 @@ class Database:
         """
         if not cls._loaded:
             raise DatabaseNotLoadedError
-        cls.ulb_guilds[guild] = role
-        asyncio.create_task(cls._set_guild_task(guild.id, role.id))
+        cls.ulb_guilds[guild] = UlbGuild(role, rename)
+        asyncio.create_task(cls._set_guild_task(guild.id, role.id, rename))
+
+    @classmethod
+    async def _delete_guild_task(cls, guild_id: int):
+        """Coroutine task called by `delete_guild()` to delete guild informations from the google sheet
+
+        Parameters
+        ----------
+        guild_id : `int`
+            The guild id
+        """
+        guild_cell: gspread.cell.Cell = cls._guilds_ws.find(str(guild_id), in_column=1)
+        await asyncio.sleep(0.1)
+        logging.trace(f"[Database] {guild_id=} found")
+        cls._guilds_ws.delete_row(guild_cell.row)
+        await asyncio.sleep(0.1)
+        logging.info(f"[Database] {guild_id=} deleted.")
+
+    @classmethod
+    def delete_guild(cls, guild: disnake.Guild):
+        """Delete a given ulb guild.
+
+        It create a task without waiting for it to end, in order to not decrease the global performance of the Bot.
+
+        Parameters
+        ----------
+        guild : `disnake.Guild`
+            The guild to delete
+        """
+        if not cls._loaded:
+            raise DatabaseNotLoadedError
+        cls.ulb_guilds.pop(guild)
+        asyncio.create_task(cls._delete_guild_task(guild.id))

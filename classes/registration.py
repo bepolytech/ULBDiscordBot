@@ -68,7 +68,7 @@ class Registration:
     """
 
     # Config params
-    email_domain = "ulb.be"
+    email_domains = "ulb.be"
     token_size = 10
     token_validity_time = 60 * 10  # In sec
     token_nbr_try = 5
@@ -288,7 +288,7 @@ class Registration:
             return
 
         # Check email domain validity
-        if splited_mail[1] != self.email_domain:
+        if splited_mail[1] not in self.email_domains:
             logging.trace(f"[RegistrationForm] [User:{self.target.id}] Domain not valid.")
             self.registration_button.disabled = False
             self.registration_embed.clear_fields()
@@ -374,7 +374,7 @@ class Registration:
             EmailManager.send_token(self.email, self.token)
         except smtplib.SMTPSenderRefused as ex:
             logging.error(
-                f"[EMAIL] {type(ex).__name__} occured during token email sending error for email={self.email}: {ex}"
+                f"[EMAIL] {type(ex).__name__} occured during token email sending for email={self.email}: {ex}"
             )
             await inter.edit_original_response(
                 embed=self.token_verification_embed.add_field(
@@ -524,10 +524,10 @@ class Registration:
                 description="Ton addresse mail **ULB** est bien vérifiée !\nTu as désormais accès aux serveurs **ULB**",
                 color=disnake.Color.green(),
             ).set_thumbnail(url=Bot.ULB_image),
-            View=None,
+            view=None,
         )
 
-        await update_user(self.target, name)
+        await update_user(self.target, name=name)
 
     async def _cancel(self) -> None:
         await self._stop()
@@ -600,4 +600,4 @@ class AdminEditUserModal(disnake.ui.Modal):
             )
         )
 
-        await update_user(self.user, name)
+        await update_user(self.user, name=name)
