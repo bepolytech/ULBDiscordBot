@@ -138,14 +138,14 @@ python3 main.py
 ### Run with docker
 
 ```bash
-docker run --env-file=.env ulbdiscordbot
+docker run -d --env-file=.env ulbdiscordbot
 ```
 
 > OR :  
 >
 > from the docker hub image :
 > ```bash
-> docker run --env-file=.env bepolytech/ulbdiscordbot
+> docker run -d --env-file=.env bepolytech/ulbdiscordbot
 > ```
 >
 > if image not built :
