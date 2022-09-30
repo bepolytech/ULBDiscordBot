@@ -4,6 +4,7 @@ version: '3.8'
 services:
   ULBDiscordBot:
     name: ULBDiscordBot
+    #image: bepolytech/ulbdiscordbot
     build:
       context: .
       #image: ulbdiscordbot
