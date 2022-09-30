@@ -190,7 +190,6 @@ class Registration:
         if pending_registration:
             logging.info(f"[RegistrationForm] [User:{self.target.id}] Previous registration process cancelled.")
             await pending_registration._cancel()
-            return
         self._current_registrations[self.target] = self
 
         logging.info(f"[RegistrationForm] [User:{self.target.id}] Registration started")
@@ -444,7 +443,7 @@ class Registration:
             return
 
         self.msg = await inter.response.edit_message(embed=self.verification_embed, view=self.token_verification_view)
-        token = inter.text_values.get("token")
+        token = inter.text_values.get("token").lower()
         logging.trace(f"[RegistrationForm] [User:{self.target.id}] Token modal callback with token={token}.")
 
         # If token invalid
@@ -530,16 +529,21 @@ class Registration:
         await update_user(self.target, name=name)
 
     async def _cancel(self) -> None:
-        await self._stop()
-        await self.msg.edit(
-            embed=disnake.Embed(
-                title=self._title, description="Vérification abandonnée.", color=disnake.Colour.dark_grey()
+        try:
+            await self.msg.edit(
+                embed=disnake.Embed(
+                    title=self._title, description="Vérification abandonnée.", color=disnake.Colour.orange()
+                ),
+                view=None,
             )
-        )
+        except disnake.HTTPException:
+            pass
 
     async def _stop(self) -> None:
         """Properly end a registration process by deleting the related pending registration entries."""
-        self._current_registrations.pop(self.target)
+        current_registration = self._current_registrations.get(self.target)
+        if current_registration == self:
+            self._current_registrations.pop(self.target)
 
 
 class AdminAddUserModal(disnake.ui.Modal):
