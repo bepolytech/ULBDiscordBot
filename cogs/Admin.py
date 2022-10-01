@@ -7,7 +7,7 @@ from disnake.ext import commands
 
 from bot import Bot
 from classes import Database
-from classes import update_guild
+from classes import utils
 from classes.registration import AdminAddUserModal
 from classes.registration import AdminEditUserModal
 
@@ -17,30 +17,27 @@ class Admin(commands.Cog):
         """Initialize the cog"""
         self.bot: Bot = bot
 
-    @commands.slash_command(name="update", guilds=[int(os.getenv("ADMIN_GUILD_ID"))], dm_permission=False)
-    async def update(self, inter):
-        pass
-
-    @update.sub_command(name="database", description="Forcer la mise à jour de la database")
-    async def update_database(self, inter: disnake.ApplicationCommandInteraction):
+    @commands.slash_command(
+        name="update",
+        description="Forcer la mise à jour de la database et des serveurs.",
+        guilds=[int(os.getenv("ADMIN_GUILD_ID"))],
+        default_member_permissions=disnake.Permissions.all(),
+        dm_permission=False,
+    )
+    async def update(self, inter: disnake.ApplicationCommandInteraction):
         await inter.response.defer(ephemeral=True)
         Database.load(self.bot)
-        await inter.edit_original_response(
-            embed=disnake.Embed(description="Google sheet reloaded !", color=disnake.Color.green())
-        )
-
-    @update.sub_command(name="guilds", description="Mettre à jour tous les serveurs ULB.")
-    async def update_guild(self, inter: disnake.ApplicationCommandInteraction):
-        await inter.response.defer(ephemeral=True)
-
-        for guild, role in Database.ulb_guilds.items():
-            await update_guild(guild, role)
-
+        await utils.update_all_guilds()
         await inter.edit_original_response(
             embed=disnake.Embed(description="All servers updated !", color=disnake.Color.green())
         )
 
-    @commands.slash_command(name="user", guilds=[int(os.getenv("ADMIN_GUILD_ID"))], dm_permission=False)
+    @commands.slash_command(
+        name="user",
+        guilds=[int(os.getenv("ADMIN_GUILD_ID"))],
+        default_member_permissions=disnake.Permissions.all(),
+        dm_permission=False,
+    )
     async def user(self, inter):
         pass
 
@@ -48,7 +45,9 @@ class Admin(commands.Cog):
     async def user_set(
         self,
         inter: disnake.ApplicationCommandInteraction,
-        user_id: str = commands.Param(description="L'id discord de l'utilisateur à ajouter."),
+        user_id: str = commands.Param(
+            description="L'id discord de l'utilisateur à ajouter.", min_length=18, max_length=18
+        ),
     ):
         user = self.bot.get_user(int(user_id))
         if not user:
@@ -61,11 +60,14 @@ class Admin(commands.Cog):
 
         await inter.response.send_modal(AdminAddUserModal(user))
 
+    # TODO: put all fields optional and added autocomplete to all of them + error if no one is provided
     @user.sub_command(name="edit", description="Editer un utilisateur ULB.")
     async def user_edit(
         self,
         inter: disnake.ApplicationCommandInteraction,
-        user_id: str = commands.Param(description="L'id discord de l'utilisateur ULB à éditer."),
+        user_id: str = commands.Param(
+            description="L'id discord de l'utilisateur ULB à éditer.", min_length=18, max_length=18
+        ),
     ):
         user = self.bot.get_user(int(user_id))
 
@@ -88,12 +90,15 @@ class Admin(commands.Cog):
 
         await inter.response.send_modal(AdminEditUserModal(user))
 
+    # TODO: put all fields optional and added autocomplete to all of them + error if no one is provided
     @user.sub_command(name="info", description="Voir les informations d'un utilisateur enregistré")
     async def user_info(
         self,
         inter: disnake.ApplicationCommandInteraction,
         user_id: str = commands.Param(
-            description="L'id discord de l'utilisateur ULB dont vous voulez voir les informations."
+            description="L'id discord de l'utilisateur ULB dont vous voulez voir les informations.",
+            min_length=18,
+            max_length=18,
         ),
     ):
         user = self.bot.get_user(int(user_id))
@@ -108,11 +113,14 @@ class Admin(commands.Cog):
             ephemeral=True,
         )
 
+    # TODO: add autocomplete for name
     @user.sub_command(name="delete", description="Supprimer un utilisateur enregistré")
     async def user_delete(
         self,
         inter: disnake.ApplicationCommandInteraction,
-        user_id: str = commands.Param(description="L'id discord de l'utilisateur ULB à supprimer."),
+        user_id: str = commands.Param(
+            description="L'id discord de l'utilisateur ULB à supprimer.", min_length=18, max_length=18
+        ),
         name: str = commands.Param(description="Le nom ULB de l'utilisateur ULB à supprimer (pour confirmation)"),
     ):
         user = self.bot.get_user(int(user_id))

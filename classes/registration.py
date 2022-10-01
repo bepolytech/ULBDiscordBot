@@ -68,7 +68,7 @@ class Registration:
     """
 
     # Config params
-    email_domain = "ulb.be"
+    email_domains = "ulb.be"
     token_size = 10
     token_validity_time = 60 * 10  # In sec
     token_nbr_try = 5
@@ -190,7 +190,6 @@ class Registration:
         if pending_registration:
             logging.info(f"[RegistrationForm] [User:{self.target.id}] Previous registration process cancelled.")
             await pending_registration._cancel()
-            return
         self._current_registrations[self.target] = self
 
         logging.info(f"[RegistrationForm] [User:{self.target.id}] Registration started")
@@ -288,7 +287,7 @@ class Registration:
             return
 
         # Check email domain validity
-        if splited_mail[1] != self.email_domain:
+        if splited_mail[1] not in self.email_domains:
             logging.trace(f"[RegistrationForm] [User:{self.target.id}] Domain not valid.")
             self.registration_button.disabled = False
             self.registration_embed.clear_fields()
@@ -374,7 +373,7 @@ class Registration:
             EmailManager.send_token(self.email, self.token)
         except smtplib.SMTPSenderRefused as ex:
             logging.error(
-                f"[EMAIL] {type(ex).__name__} occured during token email sending error for email={self.email}: {ex}"
+                f"[EMAIL] {type(ex).__name__} occured during token email sending for email={self.email}: {ex}"
             )
             await inter.edit_original_response(
                 embed=self.token_verification_embed.add_field(
@@ -444,7 +443,7 @@ class Registration:
             return
 
         self.msg = await inter.response.edit_message(embed=self.verification_embed, view=self.token_verification_view)
-        token = inter.text_values.get("token")
+        token = inter.text_values.get("token").lower()
         logging.trace(f"[RegistrationForm] [User:{self.target.id}] Token modal callback with token={token}.")
 
         # If token invalid
@@ -524,22 +523,27 @@ class Registration:
                 description="Ton addresse mail **ULB** est bien vérifiée !\nTu as désormais accès aux serveurs **ULB**",
                 color=disnake.Color.green(),
             ).set_thumbnail(url=Bot.ULB_image),
-            View=None,
+            view=None,
         )
 
-        await update_user(self.target, name)
+        await update_user(self.target, name=name)
 
     async def _cancel(self) -> None:
-        await self._stop()
-        await self.msg.edit(
-            embed=disnake.Embed(
-                title=self._title, description="Vérification abandonnée.", color=disnake.Colour.dark_grey()
+        try:
+            await self.msg.edit(
+                embed=disnake.Embed(
+                    title=self._title, description="Vérification abandonnée.", color=disnake.Colour.orange()
+                ),
+                view=None,
             )
-        )
+        except disnake.HTTPException:
+            pass
 
     async def _stop(self) -> None:
         """Properly end a registration process by deleting the related pending registration entries."""
-        self._current_registrations.pop(self.target)
+        current_registration = self._current_registrations.get(self.target)
+        if current_registration == self:
+            self._current_registrations.pop(self.target)
 
 
 class AdminAddUserModal(disnake.ui.Modal):
@@ -600,4 +604,4 @@ class AdminEditUserModal(disnake.ui.Modal):
             )
         )
 
-        await update_user(self.user, name)
+        await update_user(self.user, name=name)
