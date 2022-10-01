@@ -166,3 +166,21 @@ Once the ULB role is set, when a new user join the server, either he is already 
 * `/role update`
 
 At any point, you can run `/role update` (admin permission needed) to check all the member of the server and add `@ULB` role and rename if the member is registered (usefull when adding the bot to a server that already contains registered users, or if you have manually added an user to the google sheet). ⚠️ That won't affect users that are not registered, so you can still add manually the `@ULB` role to someone to give him acces to only this server.
+
+## 👤 Author
+
+Bot made by [OscarVsp](https://github.com/OscarVsp)
+
+## 👥 Contributors
+
+- [Lucas Placentino](https://github.com/LucasPlacentino)
+
+## 🏛 Made originally for the Université libre de Bruxelles student associations
+
+Built for the [Bureau Etudiant de Polytechnique (BEP)](https://bepolytech.be).  
+
+<a href="https://ulb.be/en" target="_blank"><img src="https://user-images.githubusercontent.com/23436953/193416825-acafd006-a90b-4c8f-ba73-47a77e38b400.jpg" height="80"></a>
+
+## 📜 License
+
+TODO
