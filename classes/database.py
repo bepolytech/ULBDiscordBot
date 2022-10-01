@@ -3,6 +3,7 @@ import asyncio
 import logging
 import os
 from typing import Dict
+from typing import Optional
 
 import disnake
 import gspread
@@ -318,3 +319,17 @@ class Database:
             raise DatabaseNotLoadedError
         cls.ulb_guilds.pop(guild)
         asyncio.create_task(cls._delete_guild_task(guild.id))
+
+    @classmethod
+    def get_user_by_name(self, name: str) -> Optional[disnake.User]:
+        for user, userdata in self.ulb_users.items():
+            if userdata.name == name:
+                return user
+        return None
+
+    @classmethod
+    def get_user_by_email(self, email: str) -> Optional[disnake.User]:
+        for user, userdata in self.ulb_users.items():
+            if userdata.email == email:
+                return user
+        return None
