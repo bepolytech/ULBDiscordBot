@@ -171,3 +171,7 @@ Delete an user.
 * `/update`
 
 This force a total update of the database and all the servers. Since the bot already do this automatically at startup and after each disconnection, the only normal usecase for this would be if you manually add an entry (server of user) to the google sheet instead of using the `/user add` command above.
+
+## 📜 License
+
+GNU General Public License v3.0
