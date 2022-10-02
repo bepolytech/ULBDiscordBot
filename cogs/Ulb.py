@@ -142,7 +142,6 @@ class Ulb(commands.Cog):
             )
             await utils.update_member(member, role=guild_data.role, rename=guild_data.rename)
 
-    # FIXME: one of the if don't get registerd
     @commands.Cog.listener("on_guild_role_update")
     async def on_guild_role_update(self, before: disnake.Role, after: disnake.Role):
         guild_data = Database.ulb_guilds.get(after.guild, None)
@@ -156,28 +155,33 @@ class Ulb(commands.Cog):
             async for audit in after.guild.audit_logs(action=disnake.AuditLogAction.role_update, limit=10):
                 if (
                     audit.target == after
-                    and audit.category == disnake.AuditLogActionCategory.update
                     and audit.before.permissions.change_nickname == False
                     and audit.after.permissions.change_nickname == True
                 ):
                     await audit.user.send(
                         embed=disnake.Embed(
                             title="Modification des permissions du role **ULB**.",
-                            description=f"Vous avez autorisé le role {after.mention} à modifier son propre pseudo. Ce role est paramètré comme le role **ULB** qui est attribué automatiquement aux membres ayant vérifiés leur email **ULB** et ce serveur est paramètré pour ces membres soient renommé avec leur vrai nom.\nSi vous gardez les permissions et paramètres actuels, les nouveaux membres vérifiés seront toujours renommés automatiquement mais pourront changer leur pseudo ensuite.\nSi vous désirez changer mes paramètres pour ce serveur, vous pouvez utiliser **/setup** dans le serveur.",
+                            description=f"Vous avez autorisé le role **@{after.name}** du serveur **{after.guild.name}** à modifier son propre pseudo.\nCe role est paramètré comme le role **ULB** qui est attribué automatiquement aux membres ayant vérifiés leur email **ULB** et ce serveur est paramètré pour ces membres soient renommé avec leur vrai nom.\nSi vous gardez les permissions et paramètres actuels, les nouveaux membres vérifiés seront toujours renommés automatiquement mais pourront changer leur pseudo ensuite.\nSi vous désirez changer mes paramètres pour ce serveur, vous pouvez utiliser **/setup** dans le serveur.",
+                            color=disnake.Colour.orange(),
                         )
                     )
+                    return
 
     @commands.Cog.listener("on_guild_role_delete")
     async def on_guild_role_delete(self, role: disnake.Role):
         guild_data = Database.ulb_guilds.get(role.guild, None)
         if guild_data:
             Database.delete_guild(role.guild)
-            # TODO: get user that deleted the guild and send a warning
-
-    # TODO: get invinting user from invite and send setup information in dm ?
-    @commands.Cog.listener("on_guild_join")
-    async def on_guild_join(self, guild: disnake.Guild):
-        pass
+            async for audit in role.guild.audit_logs(action=disnake.AuditLogAction.role_delete, limit=10):
+                if audit.target == role:
+                    await audit.user.send(
+                        embed=disnake.Embed(
+                            title="Supression du role **ULB**.",
+                            description=f"""Vous avez supprimé le role **@{role.name}** du serveur **{role.guild.name}**.\nCe role était paramètré comme le role **ULB** qui est attribué automatiquement aux membres ayant vérifiés leur email **ULB**.\nPour choisir un nouveau role **ULB**, vous pouvez utilisez **"/setup"** dans le serveur.""",
+                            color=disnake.Colour.red(),
+                        )
+                    )
+                    return
 
     @commands.Cog.listener("on_guild_remove")
     async def on_guild_remove(self, guild: disnake.Guild):
