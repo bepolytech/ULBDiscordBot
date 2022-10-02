@@ -70,6 +70,10 @@ Copy the `.env_template` -`.env` to easily see all the parameters that need to b
 
 The bot token generated above.
 
+* `ADMIN_GUILD_ID`
+
+The server ID used for admin commands.
+
 * `LOG_CHANNEL`
 
 (Optional) The discord channel ID where the bot will send message when an error occure during a command. It need to have acces to this channel. If not provided, the bot owner DM is used.
