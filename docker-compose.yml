@@ -1,16 +1,17 @@
-# TODO, AND NEED TO TEST
+# NEED TO TEST
 
 version: '3.8'
 services:
   ULBDiscordBot:
-    name: ULBDiscordBot
-    #image: bepolytech/ulbdiscordbot
-    build:
-      context: .
-      #image: ulbdiscordbot
-      dockerfile: Dockerfile
+    image: bepolytech/ulbdiscordbot
+    container_name: ULBDiscordBot
+    #build:
+    #  context: .
+    #  image: ulbdiscordbot
+    #  dockerfile: Dockerfile
     env_file:
       - .env
     volumes:
-      - ./:/ulbdiscordbot:rw
+      - ./ # needs verifying
+    restart: always
     #command: python main.py
