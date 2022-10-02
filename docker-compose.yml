@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  ULBDiscordBot:
+    image: bepolytech/ulbdiscordbot
+    container_name: ULBDiscordBot
+    #build:
+    #  context: .
+    #  image: ulbdiscordbot
+    #  dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ./:/usr/src/ulbdiscordbot
+    restart: always

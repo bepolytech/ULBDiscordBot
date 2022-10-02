@@ -22,7 +22,19 @@ pip install -r requirements.txt
 
 ### Install with docker
 
-TODO : Add docker hub link and cmd
+Make sure you have the [Docker Engine installed](https://docs.docker.com/engine/install/).  
+
+(Container image available on DockerHub: [bepolytech/ulbdiscordbot](https://hub.docker.com/r/bepolytech/ulbdiscordbot))  
+
+```bash
+docker pull bepolytech/ulbdiscordbot
+```
+
+> #### Or build the image yourself
+>
+> ```bash
+> docker build . -t ulbdiscordbot
+> ```
 
 ## 🤖 Discord Bot
 
@@ -134,9 +146,21 @@ python3 main.py
 
 ### Run with docker
 
+You can either run with docker directly, or with docker-compose.  
+
+#### docker
+
 ```bash
-docker run --env-file=.env ulbdiscordbot
+docker run -d --env-file=.env bepolytech/ulbdiscordbot
 ```
+
+#### docker-compose
+
+```bash
+docker-compose up -d
+```
+
+To see the bot logs when running with docker in detached mode (`-d`), use the [docker logs for the container](https://docs.docker.com/engine/reference/commandline/logs/).
 
 ## 💠 Bot usage
 
