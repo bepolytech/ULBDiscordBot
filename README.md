@@ -1,3 +1,5 @@
+<img align="left" height="200" src="https://user-images.githubusercontent.com/23436953/193432193-4b5573ab-8dc1-4aa5-ba4e-6c52017605ef.png">
+
 # ULBDiscordBot
 
 [![CodeFactor](https://www.codefactor.io/repository/github/oscarvsp/ulbdiscordbot/badge)](https://www.codefactor.io/repository/github/oscarvsp/ulbdiscordbot)
@@ -70,6 +72,7 @@ Copy the `.env_template` -`.env` to easily see all the parameters that need to b
 
 The bot token generated above.
 
+
 * `LOG_CHANNEL`
 
 (Optional) The discord channel ID where the bot will send message when an error occure during a command. It need to have acces to this channel. If not provided, the bot owner DM is used.
@@ -95,6 +98,8 @@ The email address
 You need to go to the [google account settings Security](https://myaccount.google.com/security?hl=fr), enable the two-factor authentification then generate an applications password for the email app.
 
 ### Google Sheet
+
+Create a Google Sheet, with one sheet named "users" and another sheet named "guilds".
 
 To generate google sheet api credentials, follow [this guide](https://medium.com/@a.marenkov/how-to-get-credentials-for-google-sheets-456b7e88c430). You will get a `.json` file with all the following fields:
 
@@ -143,3 +148,21 @@ Once the ULB role is set, when a new user join the server, either he is already 
 * `/role update`
 
 At any point, you can run `/role update` (admin permission needed) to check all the member of the server and add `@ULB` role and rename if the member is registered (usefull when adding the bot to a server that already contains registered users, or if you have manually added an user to the google sheet). ⚠️ That won't affect users that are not registered, so you can still add manually the `@ULB` role to someone to give him acces to only this server.
+
+## 👤 Author
+
+Bot made by [OscarVsp](https://github.com/OscarVsp)
+
+## 👥 Contributors
+
+* [Lucas Placentino](https://github.com/LucasPlacentino)
+
+## 🏛 Made originally for the Université libre de Bruxelles student associations
+
+Built for the [Bureau Etudiant de Polytechnique (BEP)](https://bepolytech.be).  
+
+<a href="https://ulb.be/en" target="_blank"><img src="https://user-images.githubusercontent.com/23436953/193416825-acafd006-a90b-4c8f-ba73-47a77e38b400.jpg" height="80"></a>
+
+## 📜 License
+
+TODO
