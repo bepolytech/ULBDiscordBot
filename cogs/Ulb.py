@@ -89,28 +89,55 @@ class Ulb(commands.Cog):
         ).set_thumbnail(url=Bot.ULB_image)
 
         if rename and role_ulb.permissions.change_nickname:
-            try:
-                await role_ulb.edit(permissions=disnake.Permissions(change_nickname=False, manage_nicknames=False))
-            except disnake.Forbidden:
-                embed.add_field(
-                    name="⚠️",
-                    value=role_ulb.mention
-                    + " ont la permission de changer leur propre pseudo et je ne peux pas modifier celle-ci.\nRetirez cette permission si vous voulez que les membres soit obligés de garder leur vrai nom.",
-                ).set_footer(
-                    text="Vous pouvez réutiliser cette commande avec le même role pour vérifier l'état des permissions."
-                )
-            else:
-                embed.add_field(
-                    name="⚠️",
-                    value=role_ulb.mention
-                    + " avait la permission de changer leur propre pseudo.\nJ'ai retiré cette permissions pour forcer les membres à garder leur vrai nom.",
-                ).set_footer(
-                    text="Vous pouvez réutiliser cette commande avec le même role pour vérifier l'état des permissions."
-                )
+            embed.add_field(
+                name="⚠️",
+                value=role_ulb.mention
+                + " a la permission de changer leur propre pseudo.\nRetirez cette permission si vous voulez que les membres soit obligés de garder leur vrai nom.",
+            ).set_footer(
+                text="""Vous pouvez utiliser cette commande avec le même role ou "/info" pour vérifier l'état des permissions."""
+            )
 
         await inter.edit_original_message(embed=embed)
 
         await utils.update_guild(inter.guild, role=role_ulb)
+
+    @commands.slash_command(
+        name="info",
+        description="Voir les settings pour ce serveurs",
+        default_member_permissions=disnake.Permissions.all(),
+        dm_permission=False,
+    )
+    async def info(self, inter: disnake.ApplicationCommandInteraction):
+        guilddata = Database.ulb_guilds.get(inter.guild, None)
+
+        if guilddata == None:
+            await inter.response.send_message(
+                embed=disnake.Embed(
+                    title="Info du serveur",
+                    description="Ce serveur n'est pas encore configurer.\nUtilisez **/setup** pour commencer.",
+                    color=disnake.Color.orange(),
+                ),
+                ephemeral=True,
+            )
+
+        embed = disnake.Embed(
+            title="Info du serveur",
+            description=f"ULB role : {guilddata.role.mention}\nRenommer les membres : **{'oui' if guilddata.rename else 'non'}**",
+            color=disnake.Color.green(),
+        )
+
+        if guilddata.rename and guilddata.role.permissions.change_nickname:
+            embed.add_field(
+                name="⚠️",
+                value=guilddata.role.mention
+                + " a la permission de changer leur propre pseudo.\nRetirez cette permission si vous voulez que les membres soit obligés de garder leur vrai nom.",
+            )
+        else:
+            embed.add_field(
+                name="✅",
+                value="Pas de conflit de permission",
+            )
+        await inter.response.send_message(embed=embed, ephemeral=True)
 
     @commands.Cog.listener("on_member_join")
     async def on_member_join(self, member: disnake.Member):
@@ -142,7 +169,6 @@ class Ulb(commands.Cog):
             )
             await utils.update_member(member, role=guild_data.role, rename=guild_data.rename)
 
-    # FIXME: one of the if don't get registerd
     @commands.Cog.listener("on_guild_role_update")
     async def on_guild_role_update(self, before: disnake.Role, after: disnake.Role):
         guild_data = Database.ulb_guilds.get(after.guild, None)
@@ -153,35 +179,63 @@ class Ulb(commands.Cog):
             and before.permissions.change_nickname == False
             and after.permissions.change_nickname == True
         ):
+            logging.trace(
+                f"[Cog:Ulb] [Guild {after.guild.name}:{after.guild.id}] [Role {after.name}:{after.id}] Nickname permission conflict detected. Sending message to editer user..."
+            )
             async for audit in after.guild.audit_logs(action=disnake.AuditLogAction.role_update, limit=10):
                 if (
                     audit.target == after
-                    and audit.category == disnake.AuditLogActionCategory.update
                     and audit.before.permissions.change_nickname == False
                     and audit.after.permissions.change_nickname == True
                 ):
                     await audit.user.send(
                         embed=disnake.Embed(
                             title="Modification des permissions du role **ULB**.",
-                            description=f"Vous avez autorisé le role {after.mention} à modifier son propre pseudo. Ce role est paramètré comme le role **ULB** qui est attribué automatiquement aux membres ayant vérifiés leur email **ULB** et ce serveur est paramètré pour ces membres soient renommé avec leur vrai nom.\nSi vous gardez les permissions et paramètres actuels, les nouveaux membres vérifiés seront toujours renommés automatiquement mais pourront changer leur pseudo ensuite.\nSi vous désirez changer mes paramètres pour ce serveur, vous pouvez utiliser **/setup** dans le serveur.",
+                            description=f"Vous avez autorisé le role **@{after.name}** du serveur **{after.guild.name}** à modifier son propre pseudo.\nCe role est paramètré comme le role **ULB** qui est attribué automatiquement aux membres ayant vérifiés leur email **ULB** et ce serveur est paramètré pour ces membres soient renommé avec leur vrai nom.\nSi vous gardez les permissions et paramètres actuels, les nouveaux membres vérifiés seront toujours renommés automatiquement mais pourront changer leur pseudo ensuite.\nSi vous désirez changer mes paramètres pour ce serveur, vous pouvez utiliser **/setup** dans le serveur.",
+                            color=disnake.Colour.orange(),
                         )
                     )
+                    logging.info(
+                        f"[Cog:Ulb] [Guild {after.guild.name}:{after.guild.id}] [Role {after.name}:{after.id}] Nickname permission conflict: Warning sent to {audit.user.name}:{audit.user.id}."
+                    )
+                    return
+            logging.warning(
+                f"[Cog:Ulb] [Guild {after.guild.name}:{after.guild.id}] [Role {after.name}:{after.id}] Nickname permission conflict: Not able to found editer user from auditlog."
+            )
 
     @commands.Cog.listener("on_guild_role_delete")
     async def on_guild_role_delete(self, role: disnake.Role):
         guild_data = Database.ulb_guilds.get(role.guild, None)
         if guild_data:
+            logging.trace(
+                f"[Cog:Ulb] [Guild {role.guild.name}:{role.guild.id}] [Role {role.name}:{role.id}] Role deleted: Remonving entry from database..."
+            )
             Database.delete_guild(role.guild)
-            # TODO: get user that deleted the guild and send a warning
-
-    # TODO: get invinting user from invite and send setup information in dm ?
-    @commands.Cog.listener("on_guild_join")
-    async def on_guild_join(self, guild: disnake.Guild):
-        pass
+            logging.trace(
+                f"[Cog:Ulb] [Guild {role.guild.name}:{role.guild.id}] [Role {role.name}:{role.id}] Role deleted Entry removed from database. Sending message to editer user..."
+            )
+            async for audit in role.guild.audit_logs(action=disnake.AuditLogAction.role_delete, limit=10):
+                if audit.target == role:
+                    await audit.user.send(
+                        embed=disnake.Embed(
+                            title="Supression du role **ULB**.",
+                            description=f"""Vous avez supprimé le role **@{role.name}** du serveur **{role.guild.name}**.\nCe role était paramètré comme le role **ULB** qui est attribué automatiquement aux membres ayant vérifiés leur email **ULB**.\nPour choisir un nouveau role **ULB**, vous pouvez utilisez **"/setup"** dans le serveur.""",
+                            color=disnake.Colour.red(),
+                        )
+                    )
+                    logging.info(
+                        f"[Cog:Ulb] [Guild {role.guild.name}:{role.guild.id}] [Role {role.name}:{role.id}] Role deleted: warning sent to {audit.user.name}:{audit.user.id}"
+                    )
+                    return
+            logging.warning(
+                f"[Cog:Ulb] [Guild {role.guild.name}:{role.guild.id}] [Role {role.name}:{role.id}]  Role deleted: Not able to found editer user from auditlog."
+            )
 
     @commands.Cog.listener("on_guild_remove")
     async def on_guild_remove(self, guild: disnake.Guild):
+        logging.trace(f"[Cog:Ulb] [Guild {guild.name}:{guild.id}] Guild removed: Deleting entey from database...")
         await Database.delete_guild(guild)
+        logging.info(f"[Cog:Ulb] [Guild {guild.name}:{guild.id}] Guild removed: Entry deleted from database.")
 
     @commands.Cog.listener("on_resumed")
     async def on_resumed(self):

@@ -113,7 +113,7 @@ class Registration:
         """
         if Database.loaded == False:
             raise DatabaseNotLoadedError
-        cls.contact_user = cog.bot.get_user(int(os.getenv("CONTACT_USER_ID")))  # FIXME: user never found
+        cls._contact_user = cog.bot.get_user(int(os.getenv("CONTACT_USER_ID")))
         cls.set = True
 
     @classmethod
