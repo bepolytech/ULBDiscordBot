@@ -144,7 +144,7 @@ docker run --env-file=.env ulbdiscordbot
 
 * `/setup`
 
-(Admin permission needed) When adding the bot to a new server, you need to setthe @ULB role with the command `/setup`. This commande also allow you to choose if you want to force the registered membre to get rename with real name or not (yes by default).
+(Admin permission needed) When adding the bot to a new server, you need to set the @ULB role with the command `/setup`. This commande also allow you to choose if you want to force the registered membre to get rename with real name or not (yes by default).
 
 * `/info`
 
