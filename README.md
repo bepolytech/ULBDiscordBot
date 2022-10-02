@@ -1,3 +1,5 @@
+<img align="left" height="200" src="https://user-images.githubusercontent.com/23436953/193432193-4b5573ab-8dc1-4aa5-ba4e-6c52017605ef.png">
+
 # ULBDiscordBot
 
 [![CodeFactor](https://www.codefactor.io/repository/github/oscarvsp/ulbdiscordbot/badge)](https://www.codefactor.io/repository/github/oscarvsp/ulbdiscordbot)
@@ -82,6 +84,10 @@ Copy the `.env_template` -`.env` to easily see all the parameters that need to b
 
 The bot token generated above.
 
+* `ADMIN_GUILD_ID`
+
+(Optional) The discord server where to register admin commandes (see below)
+
 * `LOG_CHANNEL`
 
 (Optional) The discord channel ID where the bot will send message when an error occure during a command. It need to have acces to this channel. If not provided, the bot owner DM is used.
@@ -107,6 +113,8 @@ The email address
 You need to go to the [google account settings Security](https://myaccount.google.com/security?hl=fr), enable the two-factor authentification then generate an applications password for the email app.
 
 ### Google Sheet
+
+Create a Google Sheet, with one sheet named "users" and another sheet named "guilds".
 
 To generate google sheet api credentials, follow [this guide](https://medium.com/@a.marenkov/how-to-get-credentials-for-google-sheets-456b7e88c430). You will get a `.json` file with all the following fields:
 
@@ -158,14 +166,57 @@ docker run --env-file=.env ulbdiscordbot
 
 ## 💠 Bot usage
 
-* `/role setup`
+### ULB servers
 
-When adding the bot to a new server, either the server follow the guild template given, and the role `@ULB` will get automatically set, or you can set it manually with the command `/role setup` (admin permission needed).
+* `/setup`
 
-* `/email`
+(Admin permission needed) When adding the bot to a new server, you need to set the @ULB role with the command `/setup`. This commande also allow you to choose if you want to force the registered membre to get rename with real name or not (yes by default).
 
-Once the ULB role is set, when a new user join the server, either he is already registered (from another of yours server) in which case he will get the `@ULB` role and get rename, or he is not registered yet and will received a DM message with the instruction to register himself using `/email` command.
+* `/info`
 
-* `/role update`
+(Admin permission needed) Get current server information (@ULB role, does rename is enable, and check for permission conflict).
 
-At any point, you can run `/role update` (admin permission needed) to check all the member of the server and add `@ULB` role and rename if the member is registered (usefull when adding the bot to a server that already contains registered users, or if you have manually added an user to the google sheet). ⚠️ That won't affect users that are not registered, so you can still add manually the `@ULB` role to someone to give him acces to only this server.
+* `/ulb`
+
+Once the ULB role is set, when a new user join the server, either he is already registered (from another of yours server) in which case he will get the `@ULB` role and get rename, or he is not registered yet and will received a DM message with the instruction to register himself using `/ulb` command.
+
+### Admin server
+
+* `/user add`
+
+Manually add an user (don't required email address to be verified)
+
+* `/user info`
+
+Get info about a registered user (discord id, ulb email, name and list of ulb guild that he is on)
+
+* `/user edit`
+
+Edit info of a user.
+
+* `/user delete`
+
+Delete an user.
+
+* `/update`
+
+This force a total update of the database and all the servers. Since the bot already do this automatically at startup and after each disconnection, the only normal usecase for this would be if you manually add an entry (server of user) to the google sheet instead of using the `/user add` command above.
+
+## 👤 Author
+
+Bot made by [OscarVsp](https://github.com/OscarVsp)
+
+## 👥 Contributors
+
+* [Lucas Placentino](https://github.com/LucasPlacentino)
+
+## 🏛 Made originally for the Université libre de Bruxelles student associations
+
+Built for the [Bureau Etudiant de Polytechnique (BEP)](https://bepolytech.be).  
+
+<a href="https://ulb.be/en" target="_blank"><img src="https://user-images.githubusercontent.com/23436953/193416825-acafd006-a90b-4c8f-ba73-47a77e38b400.jpg" height="80"></a>
+
+## 📜 License
+
+GNU General Public License v3.0
+
