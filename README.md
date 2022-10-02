@@ -1,3 +1,5 @@
+<img align="left" height="200" src="https://user-images.githubusercontent.com/23436953/193432193-4b5573ab-8dc1-4aa5-ba4e-6c52017605ef.png">
+
 # ULBDiscordBot
 
 [![CodeFactor](https://www.codefactor.io/repository/github/oscarvsp/ulbdiscordbot/badge)](https://www.codefactor.io/repository/github/oscarvsp/ulbdiscordbot)
@@ -100,6 +102,8 @@ You need to go to the [google account settings Security](https://myaccount.googl
 
 ### Google Sheet
 
+Create a Google Sheet, with one sheet named "users" and another sheet named "guilds".
+
 To generate google sheet api credentials, follow [this guide](https://medium.com/@a.marenkov/how-to-get-credentials-for-google-sheets-456b7e88c430). You will get a `.json` file with all the following fields:
 
 * `GS_TYPE` <- `'type'`
@@ -172,6 +176,21 @@ Delete an user.
 
 This force a total update of the database and all the servers. Since the bot already do this automatically at startup and after each disconnection, the only normal usecase for this would be if you manually add an entry (server of user) to the google sheet instead of using the `/user add` command above.
 
+## 👤 Author
+
+Bot made by [OscarVsp](https://github.com/OscarVsp)
+
+## 👥 Contributors
+
+* [Lucas Placentino](https://github.com/LucasPlacentino)
+
+## 🏛 Made originally for the Université libre de Bruxelles student associations
+
+Built for the [Bureau Etudiant de Polytechnique (BEP)](https://bepolytech.be).  
+
+<a href="https://ulb.be/en" target="_blank"><img src="https://user-images.githubusercontent.com/23436953/193416825-acafd006-a90b-4c8f-ba73-47a77e38b400.jpg" height="80"></a>
+
 ## 📜 License
 
 GNU General Public License v3.0
+
