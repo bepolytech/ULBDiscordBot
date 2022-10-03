@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import logging
 import os
 from typing import List
 
@@ -220,42 +221,72 @@ class Admin(commands.Cog):
             description="L'id discord de l'utilisateur ULB à supprimer.", min_length=18, max_length=18
         ),
         name: str = commands.Param(description="Le nom ULB de l'utilisateur ULB à supprimer (pour confirmation)"),
+        remove_ulb: str = commands.Param(
+            description="Retirer l'utilisateur du role ULB dans tous les serveurs.", choices=["Oui, Non"]
+        ),
     ):
+        await inter.response.defer(ephemeral=True)
         user = self.bot.get_user(int(user_id))
         if not user:
-            await inter.response.send_message(
+            await inter.edit_original_response(
                 embed=disnake.Embed(
                     description=f"Pas d'utilisteur discord avec user id = {user_id}", color=disnake.Colour.red()
-                ),
-                ephemeral=True,
+                )
             )
             return
 
         user_data = Database.ulb_users.get(user)
         if not user_data:
-            await inter.response.send_message(
+            await inter.edit_original_response(
                 embed=disnake.Embed(
                     description=f"Pas d'utilisteur ULB avec user id = {user_id}", color=disnake.Colour.red()
-                ),
-                ephemeral=True,
+                )
             )
             return
 
         if user_data.name.lower() != name.lower():
-            await inter.response.send_message(
+            await inter.edit_original_response(
                 embed=disnake.Embed(description="L'id et le nom ne correspondent pas...", color=disnake.Color.red())
             )
         else:
             Database.delete_user(user)
-            await inter.response.send_message(
-                embed=disnake.Embed(
-                    title=f"L'utilisateur à bien été supprimé !",
-                    description=f"**User id :** `{user_id}`\n**Nom :** {user_data.name}\n**Adresse email :** *{user_data.email}*",
-                    color=disnake.Color.green(),
-                ),
-                ephemeral=True,
+            error_roles = []
+            if remove_ulb == "Oui":
+                for guild, guild_data in Database.ulb_guilds.items():
+                    if user in guild:
+                        member = guild.get_member(user.id)
+                        if guild_data.role in member.roles:
+                            try:
+                                await member.remove_roles(guild_data.role)
+                            except disnake.HTTPException:
+                                error_roles.append(
+                                    f"**{guild_data.role.name}:{guild_data.role.id}** du serveur **{guild.name}:{guild.id}**"
+                                )
+                                logging.error(
+                                    f"[Cog:Admin] [Delete user {user.name}:{user.id}] Not able to remove role {guild_data.role.name}:{guild_data.role.id} of guild {guild.name}:{guild.id}."
+                                )
+                            if guild_data.rename and member.nick == user_data.name:
+                                try:
+                                    await member.edit(nick=None)
+                                except disnake.HTTPException:
+                                    logging.warning(
+                                        f"[Cog:Admin] [Delete user {user.name}:{user.id}] Not able to remove nickname"
+                                    )
+
+            embed = disnake.Embed(
+                title=f"L'utilisateur à bien été supprimé !",
+                description=f"**User id :** `{user_id}`\n**Nom :** {user_data.name}\n**Adresse email :** *{user_data.email}*",
+                color=disnake.Color.green(),
             )
-            # TODO: remove user from registered role of all guilds ? Maybe with an options
+            if error_roles:
+                embed.add_field(
+                    name="⚠️",
+                    value="Les roles @ULB des serveurs suivants n'ont pas pu être retirés :\n"
+                    + "\n >".join(error_roles),
+                )
+            await inter.edit_original_response(
+                embed=embed,
+            )
 
     @user_edit.autocomplete("user_id")
     @user_info.autocomplete("user_id")
