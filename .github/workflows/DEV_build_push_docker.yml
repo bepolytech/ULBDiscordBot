@@ -3,7 +3,7 @@ name: DEV - Build and Push docker image to DockerHub
 on:
   workflow_dispatch:
     branches:
-      - 'dev'
+      - dev
 
 jobs:
   docker:
@@ -13,6 +13,8 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: 'dev'
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
