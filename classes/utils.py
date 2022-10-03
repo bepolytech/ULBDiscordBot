@@ -13,13 +13,30 @@ class RoleNotInGuildError(Exception):
         super().__init__(f"The role  {role.name}:{role.id} is not part of the guild {guild.name}:{guild.id}.")
 
 
-async def wait_data(inter: disnake.ApplicationCommandInteraction = None) -> bool:
-    """Async sleep until GoogleSheet is loaded"""
+async def wait_data(inter: disnake.ApplicationCommandInteraction = None, timeout: int = None) -> bool:
+    """Async sleep until Database is loaded
+
+    Parameters
+    ----------
+    inter : disnake.ApplicationCommandInteraction, optional
+        The inter to edit_original_response in case of timeout, by default None
+    timeout : int, optional
+        The timeout duration, by default None. Must be provide if inter is provided.
+
+    Returns
+    -------
+    bool
+        True if not timeout, False if timeout
+    """
+    if inter != None and timeout == None:
+        logging.warning(
+            f"[Utils:wait_data] timeout cannot be None if inter is provided at the same time. Timeout=30 is used instead."
+        )
+        timeout = 30
     if not Database.loaded:
         logging.trace("[Utils] Waiting for database to be loaded...")
-        max_time = 10
         current_time = 0
-        while not Database.loaded and current_time < max_time:
+        while not Database.loaded and (timeout == None or current_time < timeout):
             await asyncio.sleep(1)
             current_time += 1
         if not Database.loaded:

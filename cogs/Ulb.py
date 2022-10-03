@@ -24,7 +24,7 @@ class Ulb(commands.Cog):
 
     async def wait_setup(self, inter: disnake.ApplicationCommandInteraction) -> None:
         """Async sleep until GoogleSheet is loaded and RegistrationForm is set"""
-        if await utils.wait_data(inter):
+        if await utils.wait_data(inter, 15):
             if not Registration.set:
                 logging.trace("[Cog:Ulb]  Waiting for registrationForm to be set...")
                 max_time = 10
@@ -69,7 +69,7 @@ class Ulb(commands.Cog):
     ):
         await inter.response.defer(ephemeral=True)
 
-        if not (await utils.wait_data(inter)):
+        if not (await utils.wait_data(inter, 15)):
             return
 
         if role_ulb == inter.guild.default_role:
