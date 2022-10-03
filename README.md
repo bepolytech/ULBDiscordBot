@@ -2,7 +2,7 @@
 
 # ULBDiscordBot
 
-[![CodeFactor](https://www.codefactor.io/repository/github/oscarvsp/ulbdiscordbot/badge)](https://www.codefactor.io/repository/github/oscarvsp/ulbdiscordbot)
+[![CodeFactor](https://www.codefactor.io/repository/github/bepolytech/ulbdiscordbot/badge)](https://www.codefactor.io/repository/github/bepolytech/ulbdiscordbot)
 
 ⚠️ ***WORK IN PROGRESS*** ⚠️
 
@@ -13,7 +13,7 @@ This is a small discord bot written in python using the [disnake library](https:
 ### Install without docker
 
 ```bash
-git clone https://github.com/OscarVsp/ULBDiscordBot.git
+git clone https://github.com/bepolytech/ULBDiscordBot.git
 cd /ULBdDiscordBot
 python3 -m venv .venv
 source .venv/bin/activate
