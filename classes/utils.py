@@ -13,6 +13,29 @@ class RoleNotInGuildError(Exception):
         super().__init__(f"The role  {role.name}:{role.id} is not part of the guild {guild.name}:{guild.id}.")
 
 
+async def wait_data(inter: disnake.ApplicationCommandInteraction = None) -> bool:
+    """Async sleep until GoogleSheet is loaded"""
+    if not Database.loaded:
+        logging.trace("[Utils] Waiting for database to be loaded...")
+        max_time = 10
+        current_time = 0
+        while not Database.loaded and current_time < max_time:
+            await asyncio.sleep(1)
+            current_time += 1
+        if not Database.loaded:
+            logging.error("[Utils] Database load waiting timeout !")
+            if inter != None:
+                await inter.edit_original_response(
+                    embed=disnake.Embed(
+                        title="Commande temporairement inaccessible.",
+                        description="Veuillez réessayer dans quelques instants.",
+                        color=disnake.Color.orange(),
+                    )
+                )
+            return False
+    return True
+
+
 async def update_member(member: disnake.Member, *, name: str = None, role: disnake.Role = None, rename: bool = None):
     """Update the role and nickname of a given member for the associated guild
 
