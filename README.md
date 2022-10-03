@@ -74,7 +74,7 @@ Check the following fields:
 * `Send Messages`
 * `Use Slash Commands`
 
-Copy the `Generated URL` given below, this is the URL to use to add the bot to your server
+Copy the `Generated URL` given below, this is the URL to use in your browser to add the bot to your server.
 
 ## 🔐 Configuration
 
@@ -98,10 +98,6 @@ The bot token generated above.
 
 (Optional) The user id that users can contact in case of an issu with the registration.
 
-* `GUILD_TEMPLATE_URL`
-
-(Optional) The url of the guild template to automatically detect role (must have a `@ULB` role).
-
 ### Email
 
 This bot is writen to send email through gmail account.
@@ -115,8 +111,6 @@ The email address
 You need to go to the [google account settings Security](https://myaccount.google.com/security?hl=fr), enable the two-factor authentification then generate an applications password for the email app.
 
 ### Google Sheet
-
-Create a Google Sheet, with one sheet named "users" and another sheet named "guilds".
 
 To generate google sheet api credentials, follow [this guide](https://medium.com/@a.marenkov/how-to-get-credentials-for-google-sheets-456b7e88c430). You will get a `.json` file with all the following fields:
 
