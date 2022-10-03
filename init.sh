@@ -15,7 +15,6 @@ echo "Selecting new virtual environnement... Done"
 echo "Installing packages from requirements.txt..."
 
 pip install -r requirements.txt
-pip install git+https://github.com/DisnakeDev/disnake.git@feature/more-forum-channel-stuff
 
 echo -e "\n\n\n\n\n\n\n\n"
 echo "initializing virtual environnement... Done"
