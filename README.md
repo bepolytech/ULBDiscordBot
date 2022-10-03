@@ -4,7 +4,7 @@
 
 [![CodeFactor](https://www.codefactor.io/repository/github/oscarvsp/ulbdiscordbot/badge)](https://www.codefactor.io/repository/github/oscarvsp/ulbdiscordbot)
 
-⚠️ **WORK IN PROGRESS** ⚠️
+⚠️ ***WORK IN PROGRESS*** ⚠️
 
 This is a small discord bot written in python using the [disnake library](https://github.com/DisnakeDev/disnake) to make a registration system for ULB servers.
 
@@ -22,9 +22,9 @@ pip install -r requirements.txt
 
 ### Install with docker
 
-Make sure you have the [Docker Engine installed](https://docs.docker.com/engine/install/).  
+Make sure you have the [Docker Engine installed](https://docs.docker.com/engine/install/).
 
-(Container image available on DockerHub: [bepolytech/ulbdiscordbot](https://hub.docker.com/r/bepolytech/ulbdiscordbot))  
+(Container image available on DockerHub: [bepolytech/ulbdiscordbot](https://hub.docker.com/r/bepolytech/ulbdiscordbot))
 
 ```bash
 docker pull bepolytech/ulbdiscordbot
@@ -45,6 +45,8 @@ Go to the [discord developper portal](https://discord.com/developers/application
 Create a new application. Once on the app dashboard, go to `Bot` and click `Add Bot`.
 
 ### Settings
+
+⚠️ *Still need to check the exact permissions needed here* ⚠️
 
 On the `Bot` page:
 
@@ -133,7 +135,21 @@ The last field is:
 
 * `GOOGLE_SHEET_URL`
 
-The google sheet url. It need to be shared to the bot using the email address on `client_email`
+The google sheet url. It need to be shared to the bot using the email address on `client_email`.
+
+The google sheet itself must have two worksheet with the following name and headers (first line)
+
+* `users`: with headers:
+
+  * `user_id`
+  * `name`
+  * `email`
+
+* `guilds`: with headers:
+
+  * `guild_id`
+  * `role_id`
+  * `rename`
 
 ## 🏃🏼 Run
 
@@ -146,7 +162,7 @@ python3 main.py
 
 ### Run with docker
 
-You can either run with docker directly, or with docker-compose.  
+You can either run with docker directly, or with docker-compose.
 
 #### docker
 
@@ -198,7 +214,7 @@ Delete an user.
 
 * `/update`
 
-This force a total update of the database and all the servers. Since the bot already do this automatically at startup and after each disconnection, the only normal usecase for this would be if you manually add an entry (server of user) to the google sheet instead of using the `/user add` command above.
+This force a total update of the database and all the servers. Since the bot already do this automatically at startup and after each reconnection, the only normal usecase for this would be if you manually add an entry (server or user) to the google sheet instead of using the `/user add` command above.
 
 ## 👤 Author
 
@@ -210,11 +226,10 @@ Bot made by [OscarVsp](https://github.com/OscarVsp)
 
 ## 🏛 Made originally for the Université libre de Bruxelles student associations
 
-Built for the [Bureau Etudiant de Polytechnique (BEP)](https://bepolytech.be).  
+Built for the [Bureau Etudiant de Polytechnique (BEP)](https://bepolytech.be).
 
 <a href="https://ulb.be/en" target="_blank"><img src="https://user-images.githubusercontent.com/23436953/193416825-acafd006-a90b-4c8f-ba73-47a77e38b400.jpg" height="80"></a>
 
 ## 📜 License
 
 GNU General Public License v3.0
-
