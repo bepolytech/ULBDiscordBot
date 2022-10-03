@@ -1,7 +1,11 @@
 name: Build and Push docker image to DockerHub
 
 on:
-  [workflow_dispatch, pull_request, push]:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - 'main'
+  push:
     branches:
       - 'main'
 
@@ -13,6 +17,8 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: 'main'
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
