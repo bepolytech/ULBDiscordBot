@@ -11,7 +11,7 @@ This is a small discord bot written in python using the [disnake library](https:
 ## 📥 Installation
 
 ### Install without docker
-
+> preferably with Linux
 ```bash
 git clone https://github.com/bepolytech/ULBDiscordBot.git
 cd /ULBdDiscordBot
@@ -112,6 +112,17 @@ You need to go to the [google account settings Security](https://myaccount.googl
 
 ### Google Sheet
 
+Create a Google Sheet, with one sheet named "users" and another sheet named "guilds", with their first line like this:  
+#### users sheet :    
+user_id | name | email
+--- | --- | ---
+
+#### guils sheet :  
+guild_id | role_id | rename  
+--- | --- | ---  
+
+Leave the rest empty.
+
 To generate google sheet api credentials, follow [this guide](https://medium.com/@a.marenkov/how-to-get-credentials-for-google-sheets-456b7e88c430). You will get a `.json` file with all the following fields:
 
 * `GS_TYPE` <- `'type'`
@@ -148,15 +159,15 @@ The google sheet itself must have two worksheet with the following name and head
 ## 🏃🏼 Run
 
 ### Run without docker
-
+> preferably with Linux
 ```bash
 source .venv/bin/activate
 python3 main.py
 ```
 
 ### Run with docker
-
-You can either run with docker directly, or with docker-compose.
+Make sure you have the [Docker Engine installed](https://docs.docker.com/engine/install/).  
+You can either run with docker directly, or with docker-compose.  
 
 #### docker
 
