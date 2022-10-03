@@ -54,14 +54,14 @@ class Admin(commands.Cog):
         if not user:
             await inter.response.send_message(
                 embed=disnake.Embed(
-                    description=f"Pas d'utilisteur discord avec user id = {user_id}.", color=disnake.Colour.red()
+                    description=f"Pas d'utilisateur discord avec user id = {user_id}.", color=disnake.Colour.red()
                 ),
                 ephemeral=True,
             )
 
         await inter.response.send_modal(AdminAddUserModal(user))
 
-    @user.sub_command(name="edit", description="Editer un utilisateur ULB.")
+    @user.sub_command(name="edit", description="Editer un utilisateur ULB (un seul paramètre requis)")
     async def user_edit(
         self,
         inter: disnake.ApplicationCommandInteraction,
@@ -129,7 +129,9 @@ class Admin(commands.Cog):
             return
         await inter.response.send_modal(AdminEditUserModal(user))
 
-    @user.sub_command(name="info", description="Voir les informations d'un utilisateur enregistré")
+    @user.sub_command(
+        name="info", description="Voir les informations d'un utilisateur enregistré (un seul paramètre requis)"
+    )
     async def user_info(
         self,
         inter: disnake.ApplicationCommandInteraction,
@@ -207,13 +209,13 @@ class Admin(commands.Cog):
         await inter.response.send_message(
             embed=disnake.Embed(
                 title="Info de l'utilisateur",
-                description=f"**User id :** `{user_id}`\n**Nom :** {user_data.name}\n**Adresse email :** *{user_data.email}*\n**ULB serveurs :** {','.join(guilds_name) if guilds_name else '*Aucun...*'}",
+                description=f"**User id :** `{user.id}`\n**Nom :** {user_data.name}\n**Adresse email :** {f'*{user_data.email}*' if user_data.email else '*N/A*'}\n**ULB serveurs :** {','.join(guilds_name) if guilds_name else '*Aucun...*'}",
                 color=disnake.Colour.green(),
             ),
             ephemeral=True,
         )
 
-    @user.sub_command(name="delete", description="Supprimer un utilisateur enregistré")
+    @user.sub_command(name="delete", description="Supprimer un utilisateur enregistré.")
     async def user_delete(
         self,
         inter: disnake.ApplicationCommandInteraction,
@@ -222,7 +224,7 @@ class Admin(commands.Cog):
         ),
         name: str = commands.Param(description="Le nom ULB de l'utilisateur ULB à supprimer (pour confirmation)"),
         remove_ulb: str = commands.Param(
-            description="Retirer l'utilisateur du role ULB dans tous les serveurs.", choices=["Oui, Non"]
+            description="Retirer l'utilisateur du role ULB dans tous les serveurs.", choices=["Oui", "Non"]
         ),
     ):
         await inter.response.defer(ephemeral=True)
@@ -253,7 +255,7 @@ class Admin(commands.Cog):
             error_roles = []
             if remove_ulb == "Oui":
                 for guild, guild_data in Database.ulb_guilds.items():
-                    if user in guild:
+                    if user in guild.members:
                         member = guild.get_member(user.id)
                         if guild_data.role in member.roles:
                             try:
@@ -308,7 +310,7 @@ class Admin(commands.Cog):
         return [
             str(userdata.email)
             for userdata in Database.ulb_users.values()
-            if str(userdata.email).startswith(user_input)
+            if str(userdata.email).startswith(user_input) and userdata.email != "N/A"
         ]
 
 

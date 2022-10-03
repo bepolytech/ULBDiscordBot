@@ -76,23 +76,21 @@ async def update_member(member: disnake.Member, *, name: str = None, role: disna
         role = Database.ulb_guilds.get(member.guild).role
     elif role not in member.guild.roles:
         raise RoleNotInGuildError(role, member.guild)
+    if rename == None:
+        rename = Database.ulb_guilds.get(member.guild).rename
 
-    # Only do something if the member is not already on ULB role
+    if rename:
+        if name == None:
+            name = Database.ulb_users.get(member).name
+        if member.nick == None or member.nick != name:
+            try:
+                await member.edit(nick=f"{name}")
+                logging.info(f"[Utils:update_user] [User:{member.id}] [Guild:{member.guild.id}] Set name={name}")
+            except HTTPException as ex:
+                logging.warning(
+                    f'[Utils:update_user] [User:{member.id}] [Guild:{member.guild.id}] Not able to edit user "{member.name}:{member.id}" nick to "{name}": {ex}'
+                )
     if role not in member.roles:
-        if rename == None:
-            rename = Database.ulb_guilds.get(member.guild).rename
-
-        if rename:
-            if name == None:
-                name = Database.ulb_users.get(member).name
-            if member.nick == None or member.nick != name:
-                try:
-                    await member.edit(nick=f"{name}")
-                    logging.info(f"[Utils:update_user] [User:{member.id}] [Guild:{member.guild.id}] Set name={name}")
-                except HTTPException as ex:
-                    logging.warning(
-                        f'[Utils:update_user] [User:{member.id}] [Guild:{member.guild.id}] Not able to edit user "{member.name}:{member.id}" nick to "{name}": {ex}'
-                    )
         try:
             await member.add_roles(role)
             logging.info(f"[Utils:update_user] [User:{member.id}] [Guild:{member.guild.id}] Set role={role.id}")

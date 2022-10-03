@@ -532,7 +532,9 @@ class Registration:
         try:
             await self.msg.edit(
                 embed=disnake.Embed(
-                    title=self._title, description="Vérification abandonnée.", color=disnake.Colour.orange()
+                    title=self._title,
+                    description="Vérification abandonnée car vous avez démarrez une nouvelle vérification.",
+                    color=disnake.Colour.orange(),
                 ),
                 view=None,
             )
@@ -540,7 +542,7 @@ class Registration:
             pass
 
     async def _stop(self) -> None:
-        """Properly end a registration process by deleting the related pending registration entries."""
+        """Properly end a registration process by deleting the pending registration entry."""
         current_registration = self._current_registrations.get(self.target)
         if current_registration == self:
             self._current_registrations.pop(self.target)
@@ -561,7 +563,9 @@ class AdminAddUserModal(disnake.ui.Modal):
     async def callback(self, interaction: disnake.ModalInteraction, /) -> None:
         await interaction.response.defer(ephemeral=True)
         name = interaction.text_values.get("name")
-        email = interaction.text_values.get("email", self._email_default_value)
+        email = interaction.text_values.get("email")
+        if email == "":
+            email == self._email_default_value
         Database.set_user(self.user, name, email)
         await interaction.edit_original_response(
             embed=disnake.Embed(
@@ -594,12 +598,14 @@ class AdminEditUserModal(disnake.ui.Modal):
     async def callback(self, interaction: disnake.ModalInteraction, /) -> None:
         await interaction.response.defer(ephemeral=True)
         name = interaction.text_values.get("name")
-        email = interaction.text_values.get("email", self._email_default_value)
+        email = interaction.text_values.get("email")
+        if email == "":
+            email == self._email_default_value
         Database.set_user(self.user, name, email)
 
         await interaction.edit_original_response(
             embed=disnake.Embed(
-                description=f"{self.user.mention} a bien été mis à jour dans la base de donnée",
+                description=f"{self.user.mention} a bien été mis à jour.",
                 color=disnake.Color.green(),
             )
         )
