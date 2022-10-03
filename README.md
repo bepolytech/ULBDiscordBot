@@ -121,7 +121,8 @@ user_id | name | email
 guild_id | role_id | rename  
 --- | --- | ---  
 
-Leave the rest empty.
+Leave the rest empty.  
+> See the sheet template : [ULBDiscordBot-DatabaseTemplate.ods](ULBDiscordBot-DatabaseTemplate.ods)  
 
 To generate google sheet api credentials, follow [this guide](https://medium.com/@a.marenkov/how-to-get-credentials-for-google-sheets-456b7e88c430). You will get a `.json` file with all the following fields:
 
