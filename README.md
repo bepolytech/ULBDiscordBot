@@ -44,8 +44,6 @@ Create a new application. Once on the app dashboard, go to `Bot` and click `Add 
 
 ### Settings
 
-⚠️ *Still need to check the exact permissions needed here* ⚠️
-
 On the `Bot` page:
 
 Considere unchecking the `Public Bot` field if you don't want everybody to be able to add the bot to their server.
