@@ -58,21 +58,21 @@ You can also change the bot `user name` and `icon`.
 
 Click on `Reset Token` and save the new generated token for later.
 
-On the `OAuth2` `URL Generator` `Scopes`
-
-Check the following fields:
+On the `OAuth2` > `URL Generator` > `Scopes`, check the following fields:
 
 * `bot`
 * `applications.commands`
 
-On the `Bot Permissions` that appeared below
+![placeholder](/docs/bot_scopes.png)
 
-Check the following fields:
+On the `Bot Permissions` that appeared below, check the following fields:
 
+* `View Audit Log`
 * `Manages Roles`
 * `Manage Nicknames`
-* `Send Messages`
 * `Use Slash Commands`
+
+![placeholder](/docs/bot_perms.png)
 
 Copy the `Generated URL` given below, this is the URL to use in your browser to add the bot to your server.
 
