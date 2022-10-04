@@ -102,6 +102,8 @@ class Ulb(commands.Cog):
                 text="""Vous pouvez utiliser cette commande avec le même role ou "/info" pour vérifier l'état des permissions."""
             )
 
+        # TODO: need to have the role of the bot higher to ULB to be able to rename it later on !
+
         await inter.edit_original_message(embed=embed)
 
         await utils.update_guild(inter.guild, role=role_ulb)
@@ -127,6 +129,7 @@ class Ulb(commands.Cog):
                     color=disnake.Color.orange(),
                 )
             )
+            return
 
         embed = disnake.Embed(
             title="Info du serveur",
@@ -140,6 +143,7 @@ class Ulb(commands.Cog):
                 value=guilddata.role.mention
                 + " a la permission de changer leur propre pseudo.\nRetirez cette permission si vous voulez que les membres soit obligés de garder leur vrai nom.",
             )
+            embed.color = disnake.Colour.orange()
         else:
             embed.add_field(
                 name="✅",

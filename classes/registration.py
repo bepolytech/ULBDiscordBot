@@ -68,11 +68,11 @@ class Registration:
     """
 
     # Config params
-    email_domains = "ulb.be"
+    email_domains = ["ulb.be"]
     token_size = 10
     token_validity_time = 60 * 10  # In sec
     token_nbr_try = 5
-    user_timeout_time = 60 * 5  # In sec
+    user_timeout_time = 60 * 10  # In sec
 
     # Class params
     _title = "Vérification de l'identité"
@@ -384,7 +384,9 @@ class Registration:
             )
             await self._stop()
         else:
-            await asyncio.sleep(self.token_validity_time)
+            await asyncio.sleep(
+                self.token_validity_time
+            )  # FIXME: Issu with timeout in case token is reset (need to stop the current timeout, maybe make this as an async task that can be stopped)
             if self.token:
                 self.token = None
                 logging.info(f"[RegistrationForm] [User:{self.target.id}] Token timeout.")
@@ -482,6 +484,7 @@ class Registration:
                 )
             return
 
+        self.token = None
         # Check email availablility from registered users again, if the case two user register with the same email at the same time
         for user_data in Database.ulb_users.values():
             if user_data.email == self.email:
