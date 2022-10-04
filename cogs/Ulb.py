@@ -43,7 +43,7 @@ class Ulb(commands.Cog):
                 return False
         return True
 
-    @commands.slash_command(name="ulb", description="Vérifier son adresse mail ULB.")
+    @commands.slash_command(name="ulb", description="Vérifier son adresse email ULB.")
     async def ulb(self, inter: ApplicationCommandInteraction):
         await inter.response.defer(ephemeral=True)
         if not (await self.wait_setup(inter)):
@@ -72,11 +72,31 @@ class Ulb(commands.Cog):
         if not (await utils.wait_data(inter, 15)):
             return
 
+        if inter.guild.me.top_role.permissions.manage_roles != True:
+            await inter.edit_original_response(
+                embed=disnake.Embed(
+                    title="Setup du role ULB du servers",
+                    description=f"J'ai besoin d'avoir la permissions d'editer les roles pour pouvoir ajouter les membres vérifiés à {role_ulb.mention}.\nChangez mes permissions et réessayez.",
+                    color=disnake.Colour.red(),
+                )
+            )
+            return
+
+        if rename == True and inter.guild.me.top_role.permissions.manage_nicknames != True:
+            await inter.edit_original_response(
+                embed=disnake.Embed(
+                    title="Setup du role ULB du servers",
+                    description=f"J'ai besoin d'avoir la permissions d'editer les pseudos des membres pour pouvoir les renommer avec leur vrai nom.\nChangez mes permissions et réessayez.",
+                    color=disnake.Colour.red(),
+                )
+            )
+            return
+
         if role_ulb == inter.guild.default_role:
             await inter.edit_original_response(
                 embed=disnake.Embed(
                     title="Setup du role ULB du servers",
-                    description=f"Le role {role_ulb.mention} ne peux pas être utilisé comme role **ULB** !.",
+                    description=f"Le role {role_ulb.mention} ne peux pas être utilisé comme role **ULB** car c'est le role par défaut.",
                     color=disnake.Color.red(),
                 )
             )
@@ -98,12 +118,14 @@ class Ulb(commands.Cog):
                 name="⚠️",
                 value=role_ulb.mention
                 + " a la permission de changer leur propre pseudo.\nRetirez cette permission si vous voulez que les membres soit obligés de garder leur vrai nom.",
+                inline=False,
             )
 
         if rename and inter.me.top_role <= role_ulb:
             embed.add_field(
                 name="⚠️",
-                value=f"Le role {inter.me.mention} doit être au dessus de {role_ulb.mention} pour pouvoir update le nom des utilisateurs enregistrés.",
+                value=f"Le role {inter.me.top_role.mention} doit être au dessus de {role_ulb.mention} pour pouvoir update le nom des utilisateurs enregistrés.",
+                inline=False,
             )
         if embed.fields != []:
             embed.color = disnake.Color.orange()
@@ -130,7 +152,7 @@ class Ulb(commands.Cog):
             await inter.edit_original_response(
                 embed=disnake.Embed(
                     title="Info du serveur",
-                    description="Ce serveur n'est pas encore configurer.\nUtilisez **/setup** pour commencer.",
+                    description="Ce serveur n'est pas encore configuré.\nUtilisez **/setup** pour commencer.",
                     color=disnake.Color.orange(),
                 )
             )
@@ -142,17 +164,29 @@ class Ulb(commands.Cog):
             color=disnake.Color.green(),
         )
 
+        if inter.guild.me.top_role.permissions.manage_roles != True:
+            embed.add_field(
+                name="❌", value="je n'ai pas la permissions de changer les roles des membres.", inline=False
+            )
+
+        if guilddata.rename and inter.guild.me.top_role.permissions.manage_nicknames != True:
+            embed.add_field(
+                name="❌", value="je n'ai pas la permissions de changer le pseudo des membres vérifiés.", inline=False
+            )
+
         if guilddata.rename and guilddata.role.permissions.change_nickname:
             embed.add_field(
                 name="⚠️",
                 value=guilddata.role.mention
                 + " a la permission de changer leur propre pseudo.\nRetirez cette permission si vous voulez que les membres soit obligés de garder leur vrai nom.",
+                inline=False,
             )
 
         if guilddata.rename and inter.me.top_role <= guilddata.role:
             embed.add_field(
                 name="⚠️",
-                value=f"Le role {inter.me.mention} doit être au dessus de {guilddata.role.mention} pour pouvoir update le nom des utilisateurs enregistrés.",
+                value=f"Le role {inter.me.top_role.mention} doit être au dessus de {guilddata.role.mention} pour pouvoir update le nom des utilisateurs enregistrés.",
+                inline=False,
             )
 
         if embed.fields == []:
@@ -163,8 +197,6 @@ class Ulb(commands.Cog):
         else:
             embed.color = disnake.Colour.orange()
         await inter.edit_original_response(embed=embed)
-
-    # TODO add a notif cmd to send isntruction message to all unregistered members ?
 
     @commands.Cog.listener("on_member_join")
     async def on_member_join(self, member: disnake.Member):
@@ -277,8 +309,40 @@ class Ulb(commands.Cog):
     async def on_resumed(self):
         await utils.update_all_guilds()
 
-    # TODO add a way to send a message to the user that invite the bot to a new serveur
-    # TODO check for the overall perms du bot
+    @commands.Cog.listener("on_guild_join")
+    async def on_guild_join(self, guild: disnake.Guild):
+        async for audit in guild.audit_logs(action=disnake.AuditLogAction.bot_add):
+            if audit.target == guild.me:
+                embed = disnake.Embed(
+                    title="Nouveau serveur",
+                    description=f"Vous venez de m'inviter dans le serveur {guild.name}, mais je n'ai pas les autorisations suffisantes pour être utilisé.\nDonner moi les autorisations listées ci-dessous et changez la position de mon role ({guild.me.top_role.mention}) dans la liste des roles du serveur pour que je sois juste en dessous des moderateurs.\nPour plus d'informations, consultez la page [github](https://github.com/bepolytech/ULBDiscordBot).",
+                    color=disnake.Colour.red(),
+                )
+                perms = guild.me.top_role.permissions
+                if perms.manage_roles != True:
+                    embed.add_field(
+                        name="❌",
+                        value="Je n'ai pas la permissions de **changer les roles**, ce dont j'ai besoin pour ajouter les membres vérifiés au role correspondant.",
+                        inline=False,
+                    )
+                if perms.manage_nicknames != True:
+                    embed.add_field(
+                        name="⚠️",
+                        value="Je n'ai pas la permissions de changer le pseudo des membres de ce serveur, ce qui veut dire que vous ne pourrez pas forcer les membres vérifiés à utiliser leur vrai nom comme pseudo.",
+                        inline=False,
+                    )
+                if embed.fields != []:
+                    await audit.user.send(embed=embed)
+                    await guild.leave()
+                else:
+                    await audit.user.send(
+                        embed=disnake.Embed(
+                            title="Nouveau serveur",
+                            description=f"Vous venez de m'inviter dans le serveur {guild.name}.\nChangez la position de mon role ({guild.me.top_role.mention}) dans la liste des roles du serveur pour que que je sois juste en dessous des moderateurs.\nUtilisez ensuite la command **/setup** dans ce serveur pour me configurer.\nPour plus d'informations, consultez la page [github](https://github.com/bepolytech/ULBDiscordBot).",
+                            color=disnake.Colour.green(),
+                        )
+                    )
+                return
 
 
 def setup(bot: commands.InteractionBot):
