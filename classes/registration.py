@@ -222,7 +222,9 @@ class Registration:
             timeout=60 * 5,
             components=[
                 disnake.ui.TextInput(
-                    label="Addresse mail ULB (@ulb.be) :", custom_id="email", placeholder="ex : t.verhaegen@ulb.be"
+                    label="Addresse mail ULB (@ulb.be) :",
+                    custom_id="email",
+                    placeholder="ex : théodore.verhaegen@ulb.be",
                 ),
             ],
             callback=self._callback_info_modal,
