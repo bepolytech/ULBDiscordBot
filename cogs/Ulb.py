@@ -98,11 +98,16 @@ class Ulb(commands.Cog):
                 name="⚠️",
                 value=role_ulb.mention
                 + " a la permission de changer leur propre pseudo.\nRetirez cette permission si vous voulez que les membres soit obligés de garder leur vrai nom.",
-            ).set_footer(
-                text="""Vous pouvez utiliser cette commande avec le même role ou "/info" pour vérifier l'état des permissions."""
             )
 
-        # TODO: need to have the role of the bot higher to ULB to be able to rename it later on !
+        if inter.me.top_role <= role_ulb:
+            embed.add_field(
+                name="⚠️",
+                value=f"Le role {inter.me.mention} doit être au dessus de {role_ulb.mention} pour pouvoir update le nom des utilisateurs enregistrés.",
+            )
+        if embed.fields != []:
+            embed.color = disnake.Color.orange()
+            embed.set_footer(text="""Vous pouvez utiliser "/info" pour vérifier l'état des permissions.""")
 
         await inter.edit_original_message(embed=embed)
 
@@ -143,12 +148,20 @@ class Ulb(commands.Cog):
                 value=guilddata.role.mention
                 + " a la permission de changer leur propre pseudo.\nRetirez cette permission si vous voulez que les membres soit obligés de garder leur vrai nom.",
             )
-            embed.color = disnake.Colour.orange()
-        else:
+
+        if inter.me.top_role <= guilddata.role:
+            embed.add_field(
+                name="⚠️",
+                value=f"Le role {inter.me.mention} doit être au dessus de {guilddata.role.mention} pour pouvoir update le nom des utilisateurs enregistrés.",
+            )
+
+        if embed.fields == []:
             embed.add_field(
                 name="✅",
                 value="Pas de conflit de permission",
             )
+        else:
+            embed.color = disnake.Colour.orange()
         await inter.edit_original_response(embed=embed)
 
     @commands.Cog.listener("on_member_join")
