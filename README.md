@@ -2,8 +2,6 @@
 
 # ULBDiscordBot
 
-[![CodeFactor](https://www.codefactor.io/repository/github/bepolytech/ulbdiscordbot/badge)](https://www.codefactor.io/repository/github/bepolytech/ulbdiscordbot)
-
 ⚠️ ***WORK IN PROGRESS*** ⚠️
 
 This is a small discord bot written in python using the [disnake library](https://github.com/DisnakeDev/disnake) to make a registration system for ULB servers.
@@ -45,8 +43,6 @@ Go to the [discord developper portal](https://discord.com/developers/application
 Create a new application. Once on the app dashboard, go to `Bot` and click `Add Bot`.
 
 ### Settings
-
-⚠️ *Still need to check the exact permissions needed here* ⚠️
 
 On the `Bot` page:
 
