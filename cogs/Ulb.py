@@ -100,7 +100,7 @@ class Ulb(commands.Cog):
                 + " a la permission de changer leur propre pseudo.\nRetirez cette permission si vous voulez que les membres soit obligés de garder leur vrai nom.",
             )
 
-        if inter.me.top_role <= role_ulb:
+        if rename and inter.me.top_role <= role_ulb:
             embed.add_field(
                 name="⚠️",
                 value=f"Le role {inter.me.mention} doit être au dessus de {role_ulb.mention} pour pouvoir update le nom des utilisateurs enregistrés.",
@@ -149,7 +149,7 @@ class Ulb(commands.Cog):
                 + " a la permission de changer leur propre pseudo.\nRetirez cette permission si vous voulez que les membres soit obligés de garder leur vrai nom.",
             )
 
-        if inter.me.top_role <= guilddata.role:
+        if guilddata.rename and inter.me.top_role <= guilddata.role:
             embed.add_field(
                 name="⚠️",
                 value=f"Le role {inter.me.mention} doit être au dessus de {guilddata.role.mention} pour pouvoir update le nom des utilisateurs enregistrés.",
@@ -163,6 +163,8 @@ class Ulb(commands.Cog):
         else:
             embed.color = disnake.Colour.orange()
         await inter.edit_original_response(embed=embed)
+
+    # TODO add a notif cmd to send isntruction message to all unregistered members ?
 
     @commands.Cog.listener("on_member_join")
     async def on_member_join(self, member: disnake.Member):
@@ -274,6 +276,9 @@ class Ulb(commands.Cog):
     @commands.Cog.listener("on_resumed")
     async def on_resumed(self):
         await utils.update_all_guilds()
+
+    # TODO add a way to send a message to the user that invite the bot to a new serveur
+    # TODO check for the overall perms du bot
 
 
 def setup(bot: commands.InteractionBot):
