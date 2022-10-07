@@ -66,7 +66,6 @@ On the `Bot Permissions` that appeared below, check the following fields:
 * `View Audit Log`
 * `Manages Roles`
 * `Manage Nicknames`
-* `Use Slash Commands`
 
 ![placeholder](/docs/bot_perms.png)
 
@@ -108,17 +107,17 @@ You need to go to the [google account settings Security](https://myaccount.googl
 
 ### Google Sheet
 
-Create a Google Sheet, with one sheet named "users" and another sheet named "guilds", with their first line like this:  
-#### users sheet :    
+Create a Google Sheet, with one sheet named "users" and another sheet named "guilds", with their first line like this:
+#### users sheet :
 user_id | name | email
 --- | --- | ---
 
-#### guils sheet :  
-guild_id | role_id | rename  
---- | --- | ---  
+#### guils sheet :
+guild_id | role_id | rename
+--- | --- | ---
 
-Leave the rest empty.  
-> See the sheet template : [ULBDiscordBot-DatabaseTemplate.ods](ULBDiscordBot-DatabaseTemplate.ods)  
+Leave the rest empty.
+> See the sheet template : [ULBDiscordBot-DatabaseTemplate.ods](ULBDiscordBot-DatabaseTemplate.ods)
 
 To generate google sheet api credentials, follow [this guide](https://medium.com/@a.marenkov/how-to-get-credentials-for-google-sheets-456b7e88c430). You will get a `.json` file with all the following fields:
 
@@ -163,8 +162,8 @@ python3 main.py
 ```
 
 ### Run with docker
-Make sure you have the [Docker Engine installed](https://docs.docker.com/engine/install/).  
-You can either run with docker directly, or with docker-compose.  
+Make sure you have the [Docker Engine installed](https://docs.docker.com/engine/install/).
+You can either run with docker directly, or with docker-compose.
 
 #### docker
 

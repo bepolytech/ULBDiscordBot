@@ -158,6 +158,7 @@ class Registration:
         self.token: str = None
         self.msg: disnake.Message = None
         self.nbr_try: int = 0
+        self._token_task = None
 
     async def _start(self, inter: disnake.ApplicationCommandInteraction) -> None:
         """Start a registration.
@@ -221,7 +222,9 @@ class Registration:
             timeout=60 * 5,
             components=[
                 disnake.ui.TextInput(
-                    label="Addresse mail ULB (@ulb.be) :", custom_id="email", placeholder="ex : t.verhaegen@ulb.be"
+                    label="Addresse mail ULB (@ulb.be) :",
+                    custom_id="email",
+                    placeholder="ex : théodore.verhaegen@ulb.be",
                 ),
             ],
             callback=self._callback_info_modal,
@@ -316,6 +319,11 @@ class Registration:
         logging.trace(f"[RegistrationForm] [User:{self.target.id}] Email valid and available.")
         await self._start_token_verification_step(inter)
 
+    async def _token_timeout_task(self, inter: disnake.ApplicationCommandInteraction):
+        await asyncio.sleep(self.token_validity_time)
+        logging.info(f"[RegistrationForm] [User:{self.target.id}] Token timeout.")
+        await self._start_token_timeout_step(inter)
+
     async def _start_token_verification_step(self, inter: disnake.ModalInteraction) -> None:
         """Start the token verification step by creating the necessary UI elements and send it to the user.
 
@@ -383,14 +391,8 @@ class Registration:
                 view=None,
             )
             await self._stop()
-        else:
-            await asyncio.sleep(
-                self.token_validity_time
-            )  # FIXME: Issu with timeout in case token is reset (need to stop the current timeout, maybe make this as an async task that can be stopped)
-            if self.token:
-                self.token = None
-                logging.info(f"[RegistrationForm] [User:{self.target.id}] Token timeout.")
-                await self._start_token_timeout_step(inter)
+
+        self._token_task = asyncio.create_task(self._token_timeout_task(inter))
 
     async def _start_token_timeout_step(self, inter: disnake.ApplicationCommandInteraction) -> None:
 
@@ -467,6 +469,7 @@ class Registration:
                     view=None,
                 )
                 asyncio.create_task(self._timeout_user(self.target))
+
                 await self._stop()
                 return
 
@@ -484,7 +487,7 @@ class Registration:
                 )
             return
 
-        self.token = None
+        self._token_task.cancel()
         # Check email availablility from registered users again, if the case two user register with the same email at the same time
         for user_data in Database.ulb_users.values():
             if user_data.email == self.email:
@@ -532,6 +535,8 @@ class Registration:
         await update_user(self.target, name=name)
 
     async def _cancel(self) -> None:
+        if self._token_task != None:
+            self._token_task.cancel()
         try:
             await self.msg.edit(
                 embed=disnake.Embed(
@@ -546,6 +551,8 @@ class Registration:
 
     async def _stop(self) -> None:
         """Properly end a registration process by deleting the pending registration entry."""
+        if self._token_task != None:
+            self._token_task.cancel()
         current_registration = self._current_registrations.get(self.target)
         if current_registration == self:
             self._current_registrations.pop(self.target)
