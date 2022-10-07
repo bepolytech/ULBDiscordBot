@@ -68,5 +68,6 @@ Ce bot sert vraiment d'authentification inter-serveurs: `Compte Discord <-> Emai
 
 
 **Bisous, le BEP. <3**  
-[insérer logo BEP]  
+<img height="80" src="https://user-images.githubusercontent.com/23436953/194563884-413e8ab8-aaa5-4f0b-a19a-c3b3f809e884.png">
+
 _by Oscar Van Slijpe & Lucas Placentino_
