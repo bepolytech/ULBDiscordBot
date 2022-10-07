@@ -2,8 +2,6 @@
 
 # ULBDiscordBot
 
-[![CodeFactor](https://www.codefactor.io/repository/github/bepolytech/ulbdiscordbot/badge)](https://www.codefactor.io/repository/github/bepolytech/ulbdiscordbot)
-
 ⚠️ ***WORK IN PROGRESS*** ⚠️
 
 This is a small discord bot written in python using the [disnake library](https://github.com/DisnakeDev/disnake) to make a registration system for ULB servers.
@@ -46,8 +44,6 @@ Create a new application. Once on the app dashboard, go to `Bot` and click `Add 
 
 ### Settings
 
-⚠️ *Still need to check the exact permissions needed here* ⚠️
-
 On the `Bot` page:
 
 Considere unchecking the `Public Bot` field if you don't want everybody to be able to add the bot to their server.
@@ -58,21 +54,21 @@ You can also change the bot `user name` and `icon`.
 
 Click on `Reset Token` and save the new generated token for later.
 
-On the `OAuth2` `URL Generator` `Scopes`
-
-Check the following fields:
+On the `OAuth2` > `URL Generator` > `Scopes`, check the following fields:
 
 * `bot`
 * `applications.commands`
 
-On the `Bot Permissions` that appeared below
+![placeholder](/docs/bot_scopes.png)
 
-Check the following fields:
+On the `Bot Permissions` that appeared below, check the following fields:
 
+* `View Audit Log`
 * `Manages Roles`
 * `Manage Nicknames`
-* `Send Messages`
 * `Use Slash Commands`
+
+![placeholder](/docs/bot_perms.png)
 
 Copy the `Generated URL` given below, this is the URL to use in your browser to add the bot to your server.
 
