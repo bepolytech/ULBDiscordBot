@@ -185,25 +185,25 @@ To see the bot logs when running with docker in detached mode (`-d`), use the [d
 
 * `/setup`
 
-(Admin permission needed) When adding the bot to a new server, you need to set the @ULB role with the command `/setup`. This commande also allow you to choose if you want to force the registered membre to get rename with real name or not (yes by default).
+(Admin permission needed) When adding the bot to a new server, you need to set the @ULB role with the command `/setup`. This command also allows you to choose if you want to force the registered member to get renamed with their real name or not (yes by default).
 
 * `/info`
 
-(Admin permission needed) Get current server information (@ULB role, does rename is enable, and check for permission conflict).
+(Admin permission needed) Get current server information (@ULB role, if rename is enabled, and checks for permission conflicts).
 
 * `/ulb`
 
-Once the ULB role is set, when a new user join the server, either he is already registered (from another of yours server) in which case he will get the `@ULB` role and get rename, or he is not registered yet and will received a DM message with the instruction to register himself using `/ulb` command.
+Once the ULB role is set, when a new user joins the server, either they are already registered (from another of your servers) in which case they will get the `@ULB` role and get renamed, or they are not registered yet and will receive a DM message with the instructions to register themselves using the `/ulb` command.
 
 ### Admin server
 
 * `/user add`
 
-Manually add an user (don't required email address to be verified)
+Manually add a user (doesn't require an email address to be verified)
 
 * `/user info`
 
-Get info about a registered user (discord id, ulb email, name and list of ulb guild that he is on)
+Get info about a registered user (Discord ID, ULB email, name and list of ULB guilds that they are on)
 
 * `/user edit`
 
@@ -211,11 +211,11 @@ Edit info of a user.
 
 * `/user delete`
 
-Delete an user.
+Delete a user.
 
 * `/update`
 
-This force a total update of the database and all the servers. Since the bot already do this automatically at startup and after each reconnection, the only normal usecase for this would be if you manually add an entry (server or user) to the google sheet instead of using the `/user add` command above.
+This forces a total update of the database and of all the servers. Since the bot already does this automatically at startup and after each reconnection, the only normal usecase for this would be if you manually add an entry (server or user) to the google sheet instead of using the `/user add` command above, we don't recommend manually editing the google sheet.
 
 ## 👤 Author
 
