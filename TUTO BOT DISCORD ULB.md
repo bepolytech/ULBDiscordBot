@@ -1,13 +1,8 @@
 # Tutoriel sur comment mettre en place le bot Discord de vérification ULB sur votre serveur Discord
-> Pour toute question ou aide: contactez le BEP et/ou leur·e(·s) délégué·e(·s) IT.
+> Pour toute question urgente ou aide urgente: contactez le BEP et/ou leur·e(·s) délégué·e(·s) IT.
 
-## Conditions
-Ce bot requiert:  
-- Un serveur Discord configuré un minimum:  
-    Un rôle "ULB" (ou "étudiant", ou nommé autrement à votre choix) avec les permissions qui vont conviennent.  
-- ~20 minutes si tout se passe bien.
-
-
+Le setup du bot sur votre serveur prendra ~10 minutes si tout se passe bien.  
+<!--
 ## 1. Serveur Discord
 Créez votre serveur Discord.  
 Mettez des administrateurs et/ou modérateurs, de votre association.  
@@ -25,57 +20,21 @@ Mettez à ce rôle les permissions qui vous arrangent. Par exemple: droit d'écr
 Le rôle du bot (normalement qui a le même nom que le bot) doit **impérativement** être placé hiérarchiquement au-dessus des rôles dont il devra ajouter et renommer. (Pour ne pas vous compliquer la vie, vous pouvez le mettre tout en haut.)  
 
 [insérer screenshot hierarchie role discord]
+-->
 
-## 2. Bot
-
-// TODO
-### 2.1 Ajout du bot dans le serveur
-
-// TODO
-
-[insérer screenshot invitation bot dans serveur]
-
-// TODO
-
-### 2.2 Setup du bot dans le serveur
-
-// TODO
-
-## 3. Détails:
-- Une fois vérifiée sur un serveur, une personne aura alors son compte Discord vérifié sur tous les serveurs Discord d'associations de l'ULB utilisant aussi ce bot ULB.  
-Ce bot sert vraiment d'authentification inter-serveurs: `Compte Discord <-> Email ULB`  
-- Une adresse email ULB ne peut être vérifiée que pour un seul compte Discord. Il n'est donc possible d'utiliser une même adresse ULB que pour un seule persone.
-
-// TODO
-
-## 4. FaQ
-- Est-ce que des gens sans adresse mail ULB peuvent quand-même avoir accès au rôle?  
-```Bien sûr! Le rôle présent sur votre serveur dépend de vous, vous pouvez donc ajouter manuellement des personnes sans adresse mail ULB. Cependant, il.elle.s ne seront pas ajouter dans la vérification automatique inter-serveur Discord ULB.```  
-- Eefse  
-```sedvzreg```
-
-// TODO
-
-Bisous, le BEP <3  
-[insérer logo BEP]
-
-_by Oscar Van Slijpe & Lucas Placentino_
-
-> Pour toute question ou aide: contactez le BEP et/ou leur·e(·s) délégué·e(·s) IT.
-
-## 📨 Inviter le bot sur votre serveur
+## 📨 1. Inviter le bot sur votre serveur
 
 Le lien d'invitation doit être demandé à (TODO). Copiez-collez le lien dans votre navigateur. Dans le menu discord apparaissant, choissez le serveur auquel ajouter le bot, puis laissez coché les autorisations par default et cliquez sur `authoriser`. Pour ajouter plusieurs serveurs, répetez l'operation avec le même lien.
 
 
 
-## ⚙ Configuration du serveur
+## ⚙ 2. Configuration du serveur
 
-### Role et permissions
+### 2.1 Role et permissions
 
 Si pas encore fait, créez un role pour les membres vérifiés (ex: `@ULB`) et retirez les permissions de `@everyone` que vous ne voulez pas octoyer aux membres non vérifiés. Si vous voulez forcer les membres vérifiés à afficher leur vrai nom comme pseudo, retirez la permissions `changer son pseudo` au role `@ULB` et mettez le role du bot au dessus du role `@ULB` dans la liste des roles du serveur (idéalement, mettez le role du bot juste en dessous de celui des modérateurs).
 
-### Setup
+### 2.2 Setup
 
 Maintenant que le serveur est correctement paramètré, vous pouvez utiliser `/setup` (nécessite d'avoir les permissions d'administrateur). Le premier paramètre (obligatoire) est le role `@ULB` à attribuer aux membres vérifiés. Le second paramètre permet de choisir si vous voulez forcer les membres vérifiés à afficher leur vrai nom comme pseudo (oui par défaut).
 
@@ -83,7 +42,13 @@ La réponse à cette commande devrait vous confirmer que le serveur est bien con
 
 En cas de problème avec les permissions du role ou du bot, celui-ci vous avertira lors de cette commande, et vous pouvez toujours utiliser `/info` pour voir la configuration actuelle du serveur et l'état des permissions.
 
-## FAQ
+## 3. Détails:
+* Une fois vérifiée sur un serveur, une personne aura alors son compte Discord vérifié sur tous les serveurs Discord d'associations de l'ULB utilisant aussi ce bot ULB.  
+Ce bot sert vraiment d'authentification inter-serveurs: `Compte Discord <-> Email ULB`
+
+* Une adresse email ULB ne peut être vérifiée que pour un seul compte Discord. Il n'est donc possible d'utiliser une même adresse ULB que pour un seule persone.
+
+## 4. FAQ
 
 * Est-ce que je peux ajouter manuellement un membre sans qu'il doivent vérifier sont email ?
 
@@ -99,4 +64,9 @@ En cas de problème avec les permissions du role ou du bot, celui-ci vous averti
 
 * Mon serveur est paramètré pour forcer renommer les membres vérifiés avec leur vrai nom mais certains membres ne sont pas renommés.
 
-> Le bot ne peux renommer que les membres dont le role le plus élevé est en dessous de celui du bot dans la list des roles du serveur. Idéalement, mettez le role du bot juste en dessous de celui des modérateurs pour s'assurer que le bot puisse renommer tous les autres membres du serveur (et demandez à vos modo de se renommer eux-mêmes si nécessaire).
+> Le bot ne peut renommer que les membres dont le role le plus élevé est en dessous de celui du bot dans la list des roles du serveur. Idéalement, mettez le role du bot juste en dessous de celui des modérateurs pour s'assurer que le bot puisse renommer tous les autres membres du serveur (et demandez à vos modo de se renommer eux-mêmes si nécessaire).
+
+
+**Bisous, le BEP. <3**  
+[insérer logo BEP]  
+_by Oscar Van Slijpe & Lucas Placentino_
