@@ -370,6 +370,3 @@ FodyWeavers.xsd
 *.json
 .vscode/
 .env.docker
-
-
-.github/
