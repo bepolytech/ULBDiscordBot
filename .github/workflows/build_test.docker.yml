@@ -1,21 +1,20 @@
-name: DEV - Build and Push docker image to DockerHub
+name: Build and Push test docker image
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
     branches:
+      - 'main'
       - 'dev'
 
 jobs:
   docker:
-    name: docker build and push
+    name: docker build and DH login & push test
     runs-on: ubuntu-latest
     steps:
       -
         name: Checkout
         uses: actions/checkout@v3
-        with:
-          ref: 'dev'
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -29,9 +28,15 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
-        name: Build and push docker image
+        name: Build and export docker image
         uses: docker/build-push-action@v3
         with:
           context: .
-          push: true
-          tags: bepolytech/ulbdiscordbot:dev
+          push: false # only test build and push
+          load: true
+          tags: bepolytech/ulbdiscordbot:test
+      
+      #-
+      #  name: Test docker image
+      #  run: |
+      #    docker run --rm bepolytech/ulbdiscordbot:test

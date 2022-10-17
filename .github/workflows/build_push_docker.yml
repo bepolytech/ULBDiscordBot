@@ -2,9 +2,6 @@ name: Build and Push docker image to DockerHub
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches:
-      - 'main'
   push:
     branches:
       - 'main'
