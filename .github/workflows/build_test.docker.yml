@@ -9,7 +9,7 @@ on:
 
 jobs:
   docker:
-    name: docker build and DH login & push test
+    name: docker build test
     runs-on: ubuntu-latest
     steps:
       -
