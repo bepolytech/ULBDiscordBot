@@ -283,7 +283,7 @@ class Ulb(commands.Cog):
                     await audit.user.send(
                         embed=disnake.Embed(
                             title="Supression du role **ULB**.",
-                            description=f"""Vous avez supprimé le role **@{role.name}** du serveur **{role.guild.name}**.\nCe role était paramètré comme le role **ULB** qui est attribué automatiquement aux membres ayant vérifiés leur email **ULB**.\nPour choisir un nouveau role **ULB**, vous pouvez utilisez **"/setup"** dans le serveur.""",
+                            description=f"""Vous avez supprimé le role **@{role.name}** du serveur **{role.guild.name}**.\nCe role était paramétré comme le role **ULB** qui était attribué automatiquement aux membres ayant vérifiés leur email **ULB**.\nCette functionnalité a été retirée et vous devez la re-configurer en utilisant **"/setup"** dans le serveur.""",
                             color=disnake.Colour.red(),
                         )
                     )
@@ -292,7 +292,7 @@ class Ulb(commands.Cog):
                     )
                     return
             logging.warning(
-                f"[Cog:Ulb] [Guild {role.guild.name}:{role.guild.id}] [Role {role.name}:{role.id}]  Role deleted: Not able to found editer user from auditlog."
+                f"[Cog:Ulb] [Guild {role.guild.name}:{role.guild.id}] [Role {role.name}:{role.id}] Role deleted: Not able to found editer user from auditlog."
             )
 
     @commands.Cog.listener("on_guild_remove")
@@ -315,7 +315,7 @@ class Ulb(commands.Cog):
             if audit.target == guild.me:
                 embed = disnake.Embed(
                     title="Nouveau serveur",
-                    description=f"Vous venez de m'inviter dans le serveur {guild.name}, mais je n'ai pas les autorisations suffisantes pour être utilisé.\nDonner moi les autorisations listées ci-dessous et changez la position de mon role ({guild.me.top_role.mention}) dans la liste des roles du serveur pour que je sois juste en dessous des moderateurs.\nPour plus d'informations, consultez la page [github](https://github.com/bepolytech/ULBDiscordBot).",
+                    description=f"Vous venez de m'inviter dans le serveur {guild.name}, mais je n'ai pas les autorisations suffisantes pour être utilisé.\nDonnez moi les autorisations listées ci-dessous et changez la position de mon role ({guild.me.top_role.mention}) dans la liste des roles du serveur pour que je sois juste en dessous des moderateurs.\nPour plus d'informations, consultez la page [github](https://github.com/bepolytech/ULBDiscordBot).",
                     color=disnake.Colour.red(),
                 )
                 perms = guild.me.top_role.permissions
@@ -338,7 +338,7 @@ class Ulb(commands.Cog):
                     await audit.user.send(
                         embed=disnake.Embed(
                             title="Nouveau serveur",
-                            description=f"Vous venez de m'inviter dans le serveur {guild.name}.\nChangez la position de mon role ({guild.me.top_role.mention}) dans la liste des roles du serveur pour que que je sois juste en dessous des moderateurs.\nUtilisez ensuite la command **/setup** dans ce serveur pour me configurer.\nPour plus d'informations, consultez la page [github](https://github.com/bepolytech/ULBDiscordBot).",
+                            description=f"Vous venez de m'inviter dans le serveur {guild.name}.\nChangez la position de mon role ({guild.me.top_role.mention}) dans la liste des roles du serveur pour que que je sois juste en dessous des moderateurs.\nUtilisez ensuite la commande **/setup** dans le serveur pour me configurer.\nPour plus d'informations, consultez la page [github](https://github.com/bepolytech/ULBDiscordBot).",
                             color=disnake.Colour.green(),
                         )
                     )
