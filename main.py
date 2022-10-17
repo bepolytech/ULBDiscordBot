@@ -113,5 +113,3 @@ if __name__ == "__main__":
     bot = Bot(logger=rootLogger, logFormatter=logFormatter)
 
     bot.run(os.getenv("DISCORD_TOKEN"))
-
-# TODO Let the bot private so that we have to invite it ourself ? Or make a white list system ?
