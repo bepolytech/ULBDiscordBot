@@ -2,13 +2,22 @@
 
 # ULBDiscordBot
 
-This is a small discord bot written in python using the [disnake library](https://github.com/DisnakeDev/disnake) to make a registration system for ULB servers.
+This is a small discord bot written in python using the [disnake library](https://github.com/DisnakeDev/disnake) to make a registration system for ULB discord servers.
 
-The bot verifies that a user is a ULB student by verifying their ULB email adress using a one-time generated token sent to their email adress. It then gives them the role and adds thair Discord user ID and ULB email adress to a database. The user will is then automatically verified on every server that the bot is running. The bot also has a rename functionality, names are extracted from the email adress.
+The bot checks that a user is a ULB student by verifying their ULB email adress using a one-time generated token sent to their email adress. It then gives them the role and adds their Discord user ID and ULB email adress to a database. The user will is then automatically verified on every server that the bot is running. The bot also has a rename functionality (optional, per server), names are extracted from the email adress.
+
+# ➕ Add the bot to your server
+
+If you own a ulb-related discord server, you can add our bot to your server in order to use to already registered users. In this case, please refere to the [ulb tutorial](./TUTO%20BOT%20DISCORD%20ULB.md).
+
+# 🪛 Host your own version
+
+The following sections contains all the information to install and host your own version of the bot (with your own registered servers/users list).
 
 ## 📥 Installation
 
 ### Install without docker
+
 > preferably with Linux
 ```bash
 git clone https://github.com/bepolytech/ULBDiscordBot.git
