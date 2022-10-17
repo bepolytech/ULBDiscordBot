@@ -2,6 +2,9 @@ name: DEV - Build and Push docker image to DockerHub
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'dev'
 
 jobs:
   docker:
