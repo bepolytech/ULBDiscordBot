@@ -8,7 +8,7 @@ The bot checks that a user is a ULB student by verifying their ULB email adress 
 
 # ➕ Add the bot to your server
 
-If you own a ulb-related discord server, you can add our bot to your server in order to use to already registered users. In this case, please refere to the [ulb tutorial](./TUTO%20BOT%20DISCORD%20ULB.md).
+If you own a ULB-related discord server, you can add our bot to your server in order to use the already registered users. **In this case, please refer to the [ULB tutorial](./TUTO%20BOT%20DISCORD%20ULB.md).**
 
 # 🪛 Host your own version
 
