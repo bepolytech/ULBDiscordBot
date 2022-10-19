@@ -46,13 +46,13 @@ class FeedbackModal(disnake.ui.Modal):
         if self.type == FeedbackType.issu:
             embed = disnake.Embed(
                 title="Feedback - Problème",
-                description="> " + "> ".join(feedback.splitlines()),
+                description="> " + "\n> ".join(feedback.splitlines()),
                 color=disnake.Color.red(),
             )
         elif self.type == FeedbackType.improve:
             embed = disnake.Embed(
                 title="Feedback - Amélioration",
-                description="> " + "> ".join(feedback.splitlines()),
+                description="> " + "\n> ".join(feedback.splitlines()),
                 color=disnake.Color.teal(),
             )
         embed.add_field(
