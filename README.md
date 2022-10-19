@@ -34,6 +34,8 @@ Make sure you have the [Docker Engine installed](https://docs.docker.com/engine/
 (Container image available on DockerHub: [bepolytech/ulbdiscordbot](https://hub.docker.com/r/bepolytech/ulbdiscordbot))
 
 ```bash
+git clone https://github.com/bepolytech/ULBDiscordBot.git
+cd /ULBdDiscordBot
 docker pull bepolytech/ulbdiscordbot
 ```
 
