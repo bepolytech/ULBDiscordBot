@@ -8,6 +8,8 @@ from disnake.ext import commands
 
 from bot import Bot
 from classes import *
+from classes.feedback import FeedbackModal
+from classes.feedback import FeedbackType
 
 
 class Ulb(commands.Cog):
@@ -197,6 +199,15 @@ class Ulb(commands.Cog):
         else:
             embed.color = disnake.Colour.orange()
         await inter.edit_original_response(embed=embed)
+
+    @commands.slash_command(name="feedback", description="Envoyer un feedback.")
+    async def feedback(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        type: str = commands.Param(description="type de feedback", choices=[FeedbackType.issu, FeedbackType.improve]),
+    ):
+        logging.trace(f"[Feedback] Starting {type} feedback by {inter.user} from {inter.guild}")
+        await inter.response.send_modal(modal=FeedbackModal(self.bot, type, inter))
 
     @commands.Cog.listener("on_member_join")
     async def on_member_join(self, member: disnake.Member):
