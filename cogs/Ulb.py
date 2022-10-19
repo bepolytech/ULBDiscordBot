@@ -207,7 +207,7 @@ class Ulb(commands.Cog):
         type: str = commands.Param(description="type de feedback", choices=[FeedbackType.issu, FeedbackType.improve]),
     ):
         logging.trace(f"[Feedback] Starting {type} feedback by {inter.user} from {inter.guild}")
-        await inter.response.send_modal(modal=FeedbackModal(self.bot, type, inter))
+        await inter.response.send_modal(modal=FeedbackModal(self.bot, type))
 
     @commands.Cog.listener("on_member_join")
     async def on_member_join(self, member: disnake.Member):
