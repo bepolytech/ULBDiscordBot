@@ -8,7 +8,7 @@ The bot checks that a user is a ULB student by verifying their ULB email adress 
 
 # ➕ Add the bot to your server
 
-If you own a ULB-related discord server, you can add our bot to your server in order to use the already registered users. **In this case, please refer to the [ULB tutorial](./TUTO%20BOT%20DISCORD%20ULB.md).**
+If you own a ULB-related discord server, you can add our bot to your server in order to use the already registered users. **In this case, please refer to the [ULB tutorial](https://github.com/bepolytech/ULBDiscordBot/blob/main/TUTO%20BOT%20DISCORD%20ULB.md).**
 
 # 🪛 Host your own version
 
@@ -70,7 +70,7 @@ On the `OAuth2` > `URL Generator` > `Scopes`, check the following fields:
 * `bot`
 * `applications.commands`
 
-![placeholder](/docs/bot_scopes.png)
+![placeholder](https://raw.githubusercontent.com/bepolytech/ULBDiscordBot/main/docs/bot_scopes.png)
 
 On the `Bot Permissions` that appeared below, check the following fields:
 
@@ -78,7 +78,7 @@ On the `Bot Permissions` that appeared below, check the following fields:
 * `Manages Roles`
 * `Manage Nicknames`
 
-![placeholder](/docs/bot_perms.png)
+![placeholder](https://raw.githubusercontent.com/bepolytech/ULBDiscordBot/main/docs/bot_perms.png)
 
 Copy the `Generated URL` given below, this is the URL to use in your browser to add the bot to your server.
 
@@ -128,7 +128,7 @@ guild_id | role_id | rename
 --- | --- | ---
 
 Leave the rest empty.
-> See the sheet template : [ULBDiscordBot-DatabaseTemplate.ods](ULBDiscordBot-DatabaseTemplate.ods)
+> See the sheet template : [ULBDiscordBot-DatabaseTemplate.ods](https://github.com/bepolytech/ULBDiscordBot/blob/main/ULBDiscordBot-DatabaseTemplate.ods)
 
 To generate google sheet api credentials, follow [this guide](https://medium.com/@a.marenkov/how-to-get-credentials-for-google-sheets-456b7e88c430). You will get a `.json` file with all the following fields:
 
