@@ -9,6 +9,7 @@ from disnake.ext import commands
 from bot import Bot
 from classes import Database
 from classes import utils
+from classes import YearlyUpdate
 from classes.registration import AdminAddUserModal
 from classes.registration import AdminEditUserModal
 
@@ -32,6 +33,23 @@ class Admin(commands.Cog):
         await inter.edit_original_response(
             embed=disnake.Embed(description="All servers updated !", color=disnake.Color.green())
         )
+
+    @commands.slash_command(
+        name="yearly-update",
+        description="Retirer tous les utilisateurs en envoyant une notification",
+        guilds=[int(os.getenv("ADMIN_GUILD_ID"))],
+        default_member_permissions=disnake.Permissions.all(),
+        dm_permission=False,
+    )
+    async def yearly_update(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        raison: str = commands.Param(
+            description="""La raison de l'update ("Vérification annuelle" par default")""",
+            default="Vérification annuelle",
+        ),
+    ):
+        await YearlyUpdate.new(raison, inter)
 
     @commands.slash_command(
         name="user",
