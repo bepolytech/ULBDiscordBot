@@ -17,6 +17,7 @@ from .database import Database
 from .database import DatabaseNotLoadedError
 from .database import UlbGuild
 from .email import EmailManager
+from .utils import remove_user
 from .utils import update_user
 from bot import Bot
 
@@ -610,23 +611,7 @@ class Unregister(disnake.ui.View):
             await inter.response.edit_message(embed=self.embeds[1], view=self)
         else:
             await inter.response.edit_message(embed=self.embeds[2], view=None)
-            user_data = Database.ulb_users.get(inter.author)
-            Database.delete_user(inter.user)
-            for guild, guild_data in self.guilds:
-                member = guild.get_member(inter.user.id)
-                try:
-                    await member.remove_roles(guild_data.role)
-                except disnake.HTTPException:
-                    logging.error(
-                        f"[Cog:Admin] [Delete user {inter.user.name}:{inter.user.id}] Not able to remove role {guild_data.role.name}:{guild_data.role.id} of guild {guild.name}:{guild.id}."
-                    )
-                if guild_data.rename and member.nick == user_data.name:
-                    try:
-                        await member.edit(nick=None)
-                    except disnake.HTTPException:
-                        logging.warning(
-                            f"[Cog:Admin] [Delete user {inter.user.name}:{inter.user.id}] Not able to remove nickname"
-                        )
+            await remove_user(inter.author)
             await inter.edit_original_response(embed=self.embeds[3])
 
     async def on_timeout(self) -> None:
