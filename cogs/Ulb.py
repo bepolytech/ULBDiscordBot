@@ -8,6 +8,8 @@ from disnake.ext import commands
 
 from bot import Bot
 from classes import *
+from classes.feedback import FeedbackModal
+from classes.feedback import FeedbackType
 
 
 class Ulb(commands.Cog):
@@ -43,13 +45,15 @@ class Ulb(commands.Cog):
                 return False
         return True
 
-    @commands.slash_command(name="ulb", description="Vérifier son adresse email ULB.")
+    @commands.slash_command(name="ulb", description="Gérer son adresse email ULB.")
     async def ulb(self, inter: ApplicationCommandInteraction):
         await inter.response.defer(ephemeral=True)
         if not (await self.wait_setup(inter)):
             return
-
-        await Registration.new(inter)
+        if inter.author in Database.ulb_users.keys():
+            await Unregister.new(inter)
+        else:
+            await Registration.new(inter)
 
     @commands.slash_command(
         name="setup",
@@ -197,6 +201,15 @@ class Ulb(commands.Cog):
         else:
             embed.color = disnake.Colour.orange()
         await inter.edit_original_response(embed=embed)
+
+    @commands.slash_command(name="feedback", description="Envoyer un feedback.")
+    async def feedback(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        type: str = commands.Param(description="type de feedback", choices=[FeedbackType.issu, FeedbackType.improve]),
+    ):
+        logging.trace(f"[Feedback] Starting {type} feedback by {inter.user} from {inter.guild}")
+        await inter.response.send_modal(modal=FeedbackModal(self.bot, type))
 
     @commands.Cog.listener("on_member_join")
     async def on_member_join(self, member: disnake.Member):
