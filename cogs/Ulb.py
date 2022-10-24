@@ -45,13 +45,15 @@ class Ulb(commands.Cog):
                 return False
         return True
 
-    @commands.slash_command(name="ulb", description="Vérifier son adresse email ULB.")
+    @commands.slash_command(name="ulb", description="Gérer son adresse email ULB.")
     async def ulb(self, inter: ApplicationCommandInteraction):
         await inter.response.defer(ephemeral=True)
         if not (await self.wait_setup(inter)):
             return
-
-        await Registration.new(inter)
+        if inter.author in Database.ulb_users.keys():
+            await Unregister.new(inter)
+        else:
+            await Registration.new(inter)
 
     @commands.slash_command(
         name="setup",

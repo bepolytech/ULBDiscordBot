@@ -8,12 +8,14 @@ from datetime import datetime
 from typing import Coroutine
 from typing import Dict
 from typing import List
+from typing import Tuple
 
 import disnake
 from disnake.ext import commands
 
 from .database import Database
 from .database import DatabaseNotLoadedError
+from .database import UlbGuild
 from .email import EmailManager
 from .utils import update_user
 from bot import Bot
@@ -528,7 +530,9 @@ class Registration:
                 title=f"✅ {self._title}",
                 description="Ton addresse mail **ULB** est bien vérifiée !\nTu as désormais accès aux serveurs **ULB**",
                 color=disnake.Color.green(),
-            ).set_thumbnail(url=Bot.ULB_image),
+            )
+            .set_thumbnail(url=Bot.ULB_image)
+            .set_footer(text="Réutilise /ulb si tu veux supprimer ton adresse email."),
             view=None,
         )
 
@@ -556,6 +560,82 @@ class Registration:
         current_registration = self._current_registrations.get(self.target)
         if current_registration == self:
             self._current_registrations.pop(self.target)
+
+
+class Unregister(disnake.ui.View):
+    def __init__(self, inter: disnake.ApplicationCommandInteraction):
+        super().__init__(timeout=5 * 60)
+        self.inter = inter
+        self.guilds: List[Tuple[disnake.Guild, UlbGuild]] = []
+        for guild, guild_data in Database.ulb_guilds.items():
+            if inter.user in guild.members:
+                member = guild.get_member(inter.user.id)
+                if guild_data.role in member.roles:
+                    self.guilds.append((guild, guild_data))
+
+        self.confirmation: bool = False
+        self.embeds = [
+            disnake.Embed(
+                title="Déjà vérifié",
+                description=f"Tu es actuellement associé à l'adresse email `{Database.ulb_users.get(self.inter.author).email}`\nTu peux supprimer ton adresse email en cliquant ci-dessous.",
+                colour=disnake.Colour.teal(),
+            ),
+            disnake.Embed(
+                title="Suppression des données",
+                description=f"⚠️ En supprimant ton adresse email, tu n'auras plus accès aux serveurs restreint aux utilisateurs vérifiés dont tu fais parti:\n`"
+                + "`\n`".join([g.name for g, _ in self.guilds])
+                + "`",
+                colour=disnake.Colour.orange(),
+            ),
+            disnake.Embed(
+                title="Suppression des données", description="*Supression en cours...*", colour=disnake.Color.orange()
+            ),
+            disnake.Embed(
+                title="Suppression des données",
+                description="Ton adresse email à bien été supprimées !",
+                colour=disnake.Colour.teal(),
+            ),
+        ]
+
+    @classmethod
+    async def new(cls, inter: disnake.ApplicationCommandInteraction):
+        new_view = cls(inter)
+        await inter.edit_original_response(embed=new_view.embeds[0], view=new_view)
+
+    @disnake.ui.button(label="Supprimer mes données", emoji="🚮", style=disnake.ButtonStyle.danger)
+    async def delete_data(self, button: disnake.Button, inter: disnake.MessageInteraction):
+        if not self.confirmation:
+            self.confirmation = True
+            button.label = "Confirmez"
+            await inter.response.edit_message(embed=self.embeds[1], view=self)
+        else:
+            await inter.response.edit_message(embed=self.embeds[2], view=None)
+            user_data = Database.ulb_users.get(inter.author)
+            Database.delete_user(inter.user)
+            for guild, guild_data in self.guilds:
+                member = guild.get_member(inter.user.id)
+                try:
+                    await member.remove_roles(guild_data.role)
+                except disnake.HTTPException:
+                    logging.error(
+                        f"[Cog:Admin] [Delete user {inter.user.name}:{inter.user.id}] Not able to remove role {guild_data.role.name}:{guild_data.role.id} of guild {guild.name}:{guild.id}."
+                    )
+                if guild_data.rename and member.nick == user_data.name:
+                    try:
+                        await member.edit(nick=None)
+                    except disnake.HTTPException:
+                        logging.warning(
+                            f"[Cog:Admin] [Delete user {inter.user.name}:{inter.user.id}] Not able to remove nickname"
+                        )
+            await inter.edit_original_response(embed=self.embeds[3])
+
+    async def on_timeout(self) -> None:
+        await self.inter.edit_original_response(
+            embed=self.embeds[1].set_footer(
+                text="La commande a expirée. Tu peux recommencer si tu veux supprimer ton adresse email"
+            ),
+            view=None,
+        )
 
 
 class AdminAddUserModal(disnake.ui.Modal):
