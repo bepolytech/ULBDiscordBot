@@ -145,7 +145,7 @@ class Registration:
             await inter.edit_original_response(
                 embed=disnake.Embed(
                     title=cls._title,
-                    description=f"Vous avez récement dépassé le nombre de tentative de vérification de votre adresse email.\nVous pourrez à nouveau essayer dans {(cls.user_timeout_time - (cls._users_timeout.get(target).second - datetime.now().second))//60} min",
+                    description=f"Vous avez récement dépassé le nombre de tentatives de vérification de votre adresse email.\nVous pourrez à nouveau essayer dans {(cls.user_timeout_time - (cls._users_timeout.get(target).second - datetime.now().second))//60} minutes.",
                     color=disnake.Colour.orange(),
                 ).set_thumbnail(Bot.ULB_image)
             )
@@ -183,7 +183,7 @@ class Registration:
             await inter.edit_original_message(
                 embed=disnake.Embed(
                     title=self._title,
-                    description=f"⛔ Tu es déjà associé à l'adresse email suivante : **{ulb_user.email}**.",
+                    description=f"⛔ Ton compte est déjà associé à l'adresse email suivante : **{ulb_user.email}**.",
                     color=disnake.Colour.dark_orange(),
                 ).set_thumbnail(Bot.ULB_image)
             )
@@ -210,7 +210,7 @@ class Registration:
         # Create UI elements for registration
         self.registration_embed = disnake.Embed(
             title=self._title,
-            description="> Ce serveur est réservé aux étudiants de l'ULB.\n> Pour accéder à ce serveur, tu dois vérifier ton identité avec ton addresse email **ULB**.",
+            description="> Ce serveur est réservé aux étudiant.e.s de l'ULB.\n> Pour accéder à ce serveur, tu dois vérifier ton identité avec ton addresse email **ULB**.",
             color=self._color,
         ).set_thumbnail(Bot.ULB_image)
         self.registration_view = disnake.ui.View()
@@ -225,9 +225,9 @@ class Registration:
             timeout=60 * 5,
             components=[
                 disnake.ui.TextInput(
-                    label="Addresse mail ULB (@ulb.be) :",
+                    label="Addresse email ULB (@ulb.be) :",
                     custom_id="email",
-                    placeholder="ex : théodore.verhaegen@ulb.be",
+                    placeholder="ex : theodore.verhaegen@ulb.be",
                 ),
             ],
             callback=self._callback_info_modal,
@@ -299,7 +299,7 @@ class Registration:
             self.registration_embed.clear_fields()
             self.registration_embed.add_field(
                 f"⚠️ Domaine incorrect",
-                value=f"**{self.email}** n'est pas une adresse email **ULB**.\nUtilise ton adresse email **@ulb.be**.",
+                value=f"**{self.email}** n'est pas une adresse email officielle **ULB**.\nUtilise ton adresse email **@ulb.be**.",
             )
             self.msg = await inter.edit_original_message(embed=self.registration_embed, view=self.registration_view)
             return
@@ -312,7 +312,7 @@ class Registration:
                 self.registration_embed.colour = disnake.Colour.red()
                 self.registration_embed.remove_footer().add_field(
                     f"⛔ Adresse email non disponible",
-                    value=f"**{self.email}** est déjà associée à un autre utilisateur discord.\nSi cette adresse email est bien la tienne et que quelqu'un a eu accès à ta boite mail pour se faire passer pour toi, envoie un message à {self._contact_user.mention if self._contact_user else 'un administrateur du serveur.'}.",
+                    value=f"**{self.email}** est déjà associée à un.e autre utilisateur.rice discord.\nSi cette adresse email est bien la tienne et que quelqu'un a eu accès à ta boite mail pour se faire passer pour toi, envoie un message à {self._contact_user.mention if self._contact_user else 'un.e administrateur.rice du serveur.'}.",
                 )
                 await inter.edit_original_message(embed=self.registration_embed, view=None)
                 await self._stop()
@@ -341,7 +341,7 @@ class Registration:
         self.token_verification_embed = (
             disnake.Embed(
                 title=self._title,
-                description=f"""Un token à été envoyé à l'addresse email ***{self.email}***.""",
+                description=f"""Un token a été envoyé à l'addresse email ***{self.email}***.""",
                 color=self._color,
             )
             .set_thumbnail(url=Bot.ULB_image)
@@ -389,7 +389,7 @@ class Registration:
             await inter.edit_original_response(
                 embed=self.token_verification_embed.add_field(
                     name="❌",
-                    value=f"Une erreur s'est produite durant l'envoie de l'email. Si cela se produit à nouveau, veuillez contacter {self._contact_user.mention if self._contact_user else 'un administrateur'}",
+                    value=f"Une erreur s'est produite durant l'envoi de l'email. Si cela se produit à nouveau, veuillez contacter {self._contact_user.mention if self._contact_user else 'un.e administrateur.rice'}",
                 ),
                 view=None,
             )
@@ -465,7 +465,7 @@ class Registration:
                 self.token_verification_embed.colour = disnake.Colour.red()
                 self.token_verification_embed.remove_footer().add_field(
                     name="⛔ Token invalide",
-                    value=f"""Nombre de tentative dépassée.\nTu dois attendre {self.user_timeout_time//60} minutes avant de pouvoir recommencer.""",
+                    value=f"""Nombre de tentatives dépassé.\nTu dois attendre {self.user_timeout_time//60} minutes avant de pouvoir recommencer.""",
                 )
                 await inter.edit_original_message(
                     embed=self.token_verification_embed,
@@ -578,12 +578,12 @@ class Unregister(disnake.ui.View):
         self.embeds = [
             disnake.Embed(
                 title="Déjà vérifié",
-                description=f"Tu es actuellement associé à l'adresse email `{Database.ulb_users.get(self.inter.author).email}`\nTu peux supprimer ton adresse email en cliquant ci-dessous.",
+                description=f"Ton compte est actuellement associé à l'adresse email `{Database.ulb_users.get(self.inter.author).email}`\nTu peux supprimer ton adresse email en cliquant ci-dessous.",
                 colour=disnake.Colour.teal(),
             ),
             disnake.Embed(
                 title="Suppression des données",
-                description=f"⚠️ En supprimant ton adresse email, tu n'auras plus accès aux serveurs restreint aux utilisateurs vérifiés dont tu fais parti:\n`"
+                description=f"⚠️ En supprimant ton adresse email, tu n'auras plus accès aux serveurs restreints aux utilisateurs vérifiés dont tu fais parti:\n`"
                 + "`\n`".join([g.name for g, _ in self.guilds])
                 + "`",
                 colour=disnake.Colour.orange(),
@@ -593,7 +593,7 @@ class Unregister(disnake.ui.View):
             ),
             disnake.Embed(
                 title="Suppression des données",
-                description="Ton adresse email à bien été supprimées !",
+                description="Ton adresse email à bien été supprimée !",
                 colour=disnake.Colour.teal(),
             ),
         ]
@@ -607,7 +607,7 @@ class Unregister(disnake.ui.View):
     async def delete_data(self, button: disnake.Button, inter: disnake.MessageInteraction):
         if not self.confirmation:
             self.confirmation = True
-            button.label = "Confirmez"
+            button.label = "Confirmer"
             await inter.response.edit_message(embed=self.embeds[1], view=self)
         else:
             await inter.response.edit_message(embed=self.embeds[2], view=None)
@@ -644,7 +644,7 @@ class AdminAddUserModal(disnake.ui.Modal):
         Database.set_user(self.user, name, email)
         await interaction.edit_original_response(
             embed=disnake.Embed(
-                description=f"{self.user.mention} a bien été ajouté à la base de donnée", color=disnake.Color.green()
+                description=f"{self.user.mention} a bien été ajouté.e à la base de donnée", color=disnake.Color.green()
             )
         )
 
@@ -668,7 +668,7 @@ class AdminEditUserModal(disnake.ui.Modal):
             ),
         ]
 
-        super().__init__(title=f"Mis à jour d'un utilisateur", components=components, timeout=10 * 60)
+        super().__init__(title=f"Mis à jour d'un.e utilisateur.rice", components=components, timeout=10 * 60)
 
     async def callback(self, interaction: disnake.ModalInteraction, /) -> None:
         await interaction.response.defer(ephemeral=True)
