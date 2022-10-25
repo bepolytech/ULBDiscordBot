@@ -9,6 +9,7 @@ from disnake.ext import commands
 from bot import Bot
 from classes import Database
 from classes import utils
+from classes import YearlyUpdate
 from classes.registration import AdminAddUserModal
 from classes.registration import AdminEditUserModal
 
@@ -34,6 +35,23 @@ class Admin(commands.Cog):
         )
 
     @commands.slash_command(
+        name="yearly-update",
+        description="Retirer tous les utilisateur.rice.s en leur envoyant une notification par email",
+        guilds=[int(os.getenv("ADMIN_GUILD_ID"))],
+        default_member_permissions=disnake.Permissions.all(),
+        dm_permission=False,
+    )
+    async def yearly_update(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        raison: str = commands.Param(
+            description="""La raison de l'update ("Vérification annuelle" par default")""",
+            default="Vérification annuelle",
+        ),
+    ):
+        await YearlyUpdate.new(raison, inter)
+
+    @commands.slash_command(
         name="user",
         guilds=[int(os.getenv("ADMIN_GUILD_ID"))],
         default_member_permissions=disnake.Permissions.all(),
@@ -42,42 +60,42 @@ class Admin(commands.Cog):
     async def user(self, inter):
         pass
 
-    @user.sub_command(name="add", description="Ajouter un utilisateur discord.")
+    @user.sub_command(name="add", description="Ajouter un.e utilisateur.rice discord.")
     async def user_set(
         self,
         inter: disnake.ApplicationCommandInteraction,
         user_id: str = commands.Param(
-            description="L'id discord de l'utilisateur à ajouter.", min_length=18, max_length=18
+            description="L'ID discord de l'utilisateur.rice à ajouter.", min_length=18, max_length=18
         ),
     ):
         user = self.bot.get_user(int(user_id))
         if not user:
             await inter.response.send_message(
                 embed=disnake.Embed(
-                    description=f"Pas d'utilisateur discord avec user id = {user_id}.", color=disnake.Colour.red()
+                    description=f"Pas d'utilisateur.rice discord avec User ID = {user_id}.", color=disnake.Colour.red()
                 ),
                 ephemeral=True,
             )
 
         await inter.response.send_modal(AdminAddUserModal(user))
 
-    @user.sub_command(name="edit", description="Editer un utilisateur ULB (un seul paramètre requis)")
+    @user.sub_command(name="edit", description="Editer un.e utilisateur.rice ULB (un seul paramètre requis)")
     async def user_edit(
         self,
         inter: disnake.ApplicationCommandInteraction,
         user_id: str = commands.Param(
-            description="L'id discord de l'utilisateur ULB à éditer.", min_length=18, max_length=18, default=None
+            description="L'ID discord de l'utilisateur.rice ULB à éditer.", min_length=18, max_length=18, default=None
         ),
-        name: str = commands.Param(description="Le nom de l'utilisateur ULB à éditer.", default=None),
-        email: str = commands.Param(description="L'email de l'utilisateur ULB à éditer.", default=None),
+        name: str = commands.Param(description="Le nom de l'utilisateur.rice ULB à éditer.", default=None),
+        email: str = commands.Param(description="L'email de l'utilisateur.rice ULB à éditer.", default=None),
     ):
         if user_id:
             user = self.bot.get_user(int(user_id))
             if user == None:
                 await inter.response.send_message(
                     embed=disnake.Embed(
-                        title="Info de l'utilisateur",
-                        description=f"L'id ne correspond à aucun utilisateur discord connu",
+                        title="Info de l'utilisateur.rice",
+                        description=f"L'ID ne correspond à aucun.e utilisateur.rice Discord connu.e",
                         color=disnake.Colour.orange(),
                     ),
                     ephemeral=True,
@@ -86,8 +104,8 @@ class Admin(commands.Cog):
             if user not in Database.ulb_users.keys():
                 await inter.response.send_message(
                     embed=disnake.Embed(
-                        title="Info de l'utilisateur",
-                        description=f"L'id ne correspond à aucun utilisateur ULB.",
+                        title="Info de l'utilisateur.rice",
+                        description=f"L'ID ne correspond à aucun.e utilisateur.rice ULB.",
                         color=disnake.Colour.orange(),
                     ),
                     ephemeral=True,
@@ -98,8 +116,8 @@ class Admin(commands.Cog):
             if user == None:
                 await inter.response.send_message(
                     embed=disnake.Embed(
-                        title="Info de l'utilisateur",
-                        description=f"Le nom ne correspond à aucun utilisateur connu",
+                        title="Info de l'utilisateur.rice",
+                        description=f"Le nom ne correspond à aucun.e utilisateur.rice connu.e",
                         color=disnake.Colour.orange(),
                     ),
                     ephemeral=True,
@@ -110,8 +128,8 @@ class Admin(commands.Cog):
             if user == None:
                 await inter.response.send_message(
                     embed=disnake.Embed(
-                        title="Info de l'utilisateur",
-                        description=f"L'email ne correspond à aucun utilisateur connu",
+                        title="Info de l'utilisateur.rice",
+                        description=f"L'email ne correspond à aucun.e utilisateur.rice connu.e",
                         color=disnake.Colour.orange(),
                     ),
                     ephemeral=True,
@@ -120,8 +138,8 @@ class Admin(commands.Cog):
         else:
             await inter.response.send_message(
                 embed=disnake.Embed(
-                    title="Info de l'utilisateur",
-                    description=f"Spécifiez l'id, le nom ou l'email dans la commande.",
+                    title="Info de l'utilisateur.rice",
+                    description=f"Spécifiez l'ID, le nom ou l'email dans la commande.",
                     color=disnake.Colour.orange(),
                 ),
                 ephemeral=True,
@@ -130,22 +148,22 @@ class Admin(commands.Cog):
         await inter.response.send_modal(AdminEditUserModal(user))
 
     @user.sub_command(
-        name="info", description="Voir les informations d'un utilisateur enregistré (un seul paramètre requis)"
+        name="info", description="Voir les informations d'un.e utilisateur.rice enregistré.e (un seul paramètre requis)"
     )
     async def user_info(
         self,
         inter: disnake.ApplicationCommandInteraction,
         user_id: str = commands.Param(
-            description="L'id discord de l'utilisateur ULB dont vous voulez voir les informations.",
+            description="L'ID Discord de l'utilisateur.rice ULB dont vous voulez voir les informations.",
             min_length=18,
             max_length=18,
             default=None,
         ),
         name: str = commands.Param(
-            description="Le nom de l'utilisateur ULB dont vous voulez voir les informations.", default=None
+            description="Le nom de l'utilisateur.rice ULB dont vous voulez voir les informations.", default=None
         ),
         email: str = commands.Param(
-            description="L'email de l'utilisateur ULB dont vous voulez voir les informations.", default=None
+            description="L'email de l'utilisateur.rice ULB dont vous voulez voir les informations.", default=None
         ),
     ):
         if user_id:
@@ -153,8 +171,8 @@ class Admin(commands.Cog):
             if user == None:
                 await inter.response.send_message(
                     embed=disnake.Embed(
-                        title="Info de l'utilisateur",
-                        description=f"L'id ne correspond à aucun utilisateur discord connu",
+                        title="Info de l'utilisateur.rice",
+                        description=f"L'ID ne correspond à aucun.e utilisateur.rice Discord connu.e",
                         color=disnake.Colour.orange(),
                     ),
                     ephemeral=True,
@@ -163,8 +181,8 @@ class Admin(commands.Cog):
             if user not in Database.ulb_users.keys():
                 await inter.response.send_message(
                     embed=disnake.Embed(
-                        title="Info de l'utilisateur",
-                        description=f"L'id ne correspond à aucun utilisateur ULB.",
+                        title="Info de l'utilisateur.rice",
+                        description=f"L'ID ne correspond à aucun.e utilisateur.rice ULB.",
                         color=disnake.Colour.orange(),
                     ),
                     ephemeral=True,
@@ -175,8 +193,8 @@ class Admin(commands.Cog):
             if user == None:
                 await inter.response.send_message(
                     embed=disnake.Embed(
-                        title="Info de l'utilisateur",
-                        description=f"Le nom ne correspond à aucun utilisateur connu",
+                        title="Info de l'utilisateur.rice",
+                        description=f"Le nom ne correspond à aucun.e utilisateur.rice connu.e",
                         color=disnake.Colour.orange(),
                     ),
                     ephemeral=True,
@@ -187,8 +205,8 @@ class Admin(commands.Cog):
             if user == None:
                 await inter.response.send_message(
                     embed=disnake.Embed(
-                        title="Info de l'utilisateur",
-                        description=f"L'email ne correspond à aucun utilisateur connu",
+                        title="Info de l'utilisateur.rice",
+                        description=f"L'email ne correspond à aucun.e utilisateur.rice connu.e",
                         color=disnake.Colour.orange(),
                     ),
                     ephemeral=True,
@@ -197,8 +215,8 @@ class Admin(commands.Cog):
         else:
             await inter.response.send_message(
                 embed=disnake.Embed(
-                    title="Info de l'utilisateur",
-                    description=f"Spécifiez l'id, le nom ou l'email dans la commande.",
+                    title="Info de l'utilisateur.rice",
+                    description=f"Spécifiez l'ID, le nom ou l'email dans la commande.",
                     color=disnake.Colour.orange(),
                 ),
                 ephemeral=True,
@@ -208,23 +226,23 @@ class Admin(commands.Cog):
         guilds_name: List[str] = [f"`{guild.name}`" for guild in Database.ulb_guilds.keys() if user in guild.members]
         await inter.response.send_message(
             embed=disnake.Embed(
-                title="Info de l'utilisateur",
-                description=f"**User id :** `{user.id}`\n**Nom :** {user_data.name}\n**Adresse email :** {f'*{user_data.email}*' if user_data.email else '*N/A*'}\n**ULB serveurs :** {','.join(guilds_name) if guilds_name else '*Aucun...*'}",
+                title="Info de l'utilisateur.rice",
+                description=f"**User ID :** `{user.id}`\n**Nom :** {user_data.name}\n**Adresse email :** {f'*{user_data.email}*' if user_data.email else '*N/A*'}\n**ULB serveurs :** {','.join(guilds_name) if guilds_name else '*Aucun...*'}",
                 color=disnake.Colour.green(),
             ),
             ephemeral=True,
         )
 
-    @user.sub_command(name="delete", description="Supprimer un utilisateur enregistré.")
+    @user.sub_command(name="delete", description="Supprimer un.e utilisateur.rice enregistré.e.")
     async def user_delete(
         self,
         inter: disnake.ApplicationCommandInteraction,
         user_id: str = commands.Param(
-            description="L'id discord de l'utilisateur ULB à supprimer.", min_length=18, max_length=18
+            description="L'ID Discord de l'utilisateur.rice ULB à supprimer.", min_length=18, max_length=18
         ),
-        name: str = commands.Param(description="Le nom ULB de l'utilisateur ULB à supprimer (pour confirmation)"),
+        name: str = commands.Param(description="Le nom ULB de l'utilisateur.rice ULB à supprimer (pour confirmation)"),
         remove_ulb: str = commands.Param(
-            description="Retirer l'utilisateur du role ULB dans tous les serveurs.", choices=["Oui", "Non"]
+            description="Retirer l'utilisateur.rice du role ULB dans tous les serveurs.", choices=["Oui", "Non"]
         ),
     ):
         await inter.response.defer(ephemeral=True)
@@ -232,7 +250,7 @@ class Admin(commands.Cog):
         if not user:
             await inter.edit_original_response(
                 embed=disnake.Embed(
-                    description=f"Pas d'utilisteur discord avec user id = {user_id}", color=disnake.Colour.red()
+                    description=f"Pas d'utilisteur.rice Discord avec User ID = {user_id}", color=disnake.Colour.red()
                 )
             )
             return
@@ -241,14 +259,14 @@ class Admin(commands.Cog):
         if not user_data:
             await inter.edit_original_response(
                 embed=disnake.Embed(
-                    description=f"Pas d'utilisteur ULB avec user id = {user_id}", color=disnake.Colour.red()
+                    description=f"Pas d'utilisteur.rice ULB avec User ID = {user_id}", color=disnake.Colour.red()
                 )
             )
             return
 
         if user_data.name.lower() != name.lower():
             await inter.edit_original_response(
-                embed=disnake.Embed(description="L'id et le nom ne correspondent pas...", color=disnake.Color.red())
+                embed=disnake.Embed(description="L'ID et le nom ne correspondent pas...", color=disnake.Color.red())
             )
         else:
             Database.delete_user(user)
@@ -276,14 +294,14 @@ class Admin(commands.Cog):
                                     )
 
             embed = disnake.Embed(
-                title=f"L'utilisateur à bien été supprimé !",
-                description=f"**User id :** `{user_id}`\n**Nom :** {user_data.name}\n**Adresse email :** *{user_data.email}*",
+                title=f"L'utilisateur.rice à bien été supprimé.e !",
+                description=f"**User ID :** `{user_id}`\n**Nom :** {user_data.name}\n**Adresse email :** *{user_data.email}*",
                 color=disnake.Color.green(),
             )
             if error_roles:
                 embed.add_field(
                     name="⚠️",
-                    value="Les roles @ULB des serveurs suivants n'ont pas pu être retirés :\n"
+                    value="Les rôles @ULB des serveurs suivants n'ont pas pu être retirés :\n"
                     + "\n >".join(error_roles),
                 )
             await inter.edit_original_response(

@@ -154,3 +154,30 @@ async def update_all_guilds() -> None:
         ]
     )
     logging.info("[Utils] All guilds checked !")
+
+
+async def remove_user(user: disnake.User) -> None:
+    """Remove a user from the database and remove role / nickname for all guilds
+
+    Parameters
+    ----------
+    user : disnake.User
+        The user to remove
+    """
+    user_data = Database.ulb_users.get(user)
+    Database.delete_user(user)
+    for guild, guild_data in Database.ulb_guilds.items():
+        if user in guild.members:
+            member = guild.get_member(user.id)
+            if guild_data.role in member.roles:
+                try:
+                    await member.remove_roles(guild_data.role)
+                except disnake.HTTPException:
+                    logging.error(
+                        f"[Cog:Admin] [Delete user {user.name}:{user.id}] Not able to remove role {guild_data.role.name}:{guild_data.role.id} of guild {guild.name}:{guild.id}."
+                    )
+                if guild_data.rename and member.nick == user_data.name:
+                    try:
+                        await member.edit(nick=None)
+                    except disnake.HTTPException:
+                        logging.warning(f"[Cog:Admin] [Delete user {user.name}:{user.id}] Not able to remove nickname")

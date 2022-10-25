@@ -3,3 +3,4 @@ from .database import *
 from .email import *
 from .registration import *
 from .utils import *
+from .yearlyUpdate import *

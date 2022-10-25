@@ -8,6 +8,8 @@ from disnake.ext import commands
 
 from bot import Bot
 from classes import *
+from classes.feedback import FeedbackModal
+from classes.feedback import FeedbackType
 
 
 class Ulb(commands.Cog):
@@ -43,13 +45,15 @@ class Ulb(commands.Cog):
                 return False
         return True
 
-    @commands.slash_command(name="ulb", description="Vérifier son adresse email ULB.")
+    @commands.slash_command(name="ulb", description="Gérer son adresse email ULB.")
     async def ulb(self, inter: ApplicationCommandInteraction):
         await inter.response.defer(ephemeral=True)
         if not (await self.wait_setup(inter)):
             return
-
-        await Registration.new(inter)
+        if inter.author in Database.ulb_users.keys():
+            await Unregister.new(inter)
+        else:
+            await Registration.new(inter)
 
     @commands.slash_command(
         name="setup",
@@ -60,7 +64,7 @@ class Ulb(commands.Cog):
     async def setup(
         self,
         inter: ApplicationCommandInteraction,
-        role_ulb: disnake.Role = commands.Param(description='Le role "ULB" à donner aux membres vérifiés.'),
+        role_ulb: disnake.Role = commands.Param(description='Le rôle "**ULB**" à donner aux membres vérifiés.'),
         rename: str = commands.Param(
             description="Est-ce que les membres doivent être renommer avec leur vrai nom.",
             default="Oui",
@@ -75,8 +79,8 @@ class Ulb(commands.Cog):
         if inter.guild.me.top_role.permissions.manage_roles != True:
             await inter.edit_original_response(
                 embed=disnake.Embed(
-                    title="Setup du role ULB du servers",
-                    description=f"J'ai besoin d'avoir la permissions d'editer les roles pour pouvoir ajouter les membres vérifiés à {role_ulb.mention}.\nChangez mes permissions et réessayez.",
+                    title="Setup du rôle ULB du serveur",
+                    description=f"J'ai besoin d'avoir la permissions d'éditer les rôles pour pouvoir ajouter les membres vérifiés à {role_ulb.mention}.\nChangez mes permissions et réessayez.",
                     color=disnake.Colour.red(),
                 )
             )
@@ -85,8 +89,8 @@ class Ulb(commands.Cog):
         if rename == True and inter.guild.me.top_role.permissions.manage_nicknames != True:
             await inter.edit_original_response(
                 embed=disnake.Embed(
-                    title="Setup du role ULB du servers",
-                    description=f"J'ai besoin d'avoir la permissions d'editer les pseudos des membres pour pouvoir les renommer avec leur vrai nom.\nChangez mes permissions et réessayez.",
+                    title="Setup du rôle ULB du serveur",
+                    description=f"J'ai besoin d'avoir la permissions d'éditer les pseudos des membres pour pouvoir les renommer avec leur vrai nom.\nChangez mes permissions et réessayez.",
                     color=disnake.Colour.red(),
                 )
             )
@@ -95,8 +99,8 @@ class Ulb(commands.Cog):
         if role_ulb == inter.guild.default_role:
             await inter.edit_original_response(
                 embed=disnake.Embed(
-                    title="Setup du role ULB du servers",
-                    description=f"Le role {role_ulb.mention} ne peux pas être utilisé comme role **ULB** car c'est le role par défaut.",
+                    title="Setup du rôle ULB du serveur",
+                    description=f"Le rôle {role_ulb.mention} ne peux pas être utilisé comme role '**ULB**' car c'est le rôle par défaut.",
                     color=disnake.Color.red(),
                 )
             )
@@ -106,7 +110,7 @@ class Ulb(commands.Cog):
 
         Database.set_guild(inter.guild, role_ulb, rename)
         embed = disnake.Embed(
-            title="Setup du role ULB du servers",
+            title="Setup du rôle ULB du serveur",
             description=f"""✅ Setup confirmé !\n\n> Les nouveaux membres seront automatiquement ajoutés à {role_ulb.mention}"""
             + (" et renommés avec leur vrai nom " if rename else " ")
             + "une fois qu'ils auront vérifiés leur adresse email **ULB**.",
@@ -124,7 +128,7 @@ class Ulb(commands.Cog):
         if rename and inter.me.top_role <= role_ulb:
             embed.add_field(
                 name="⚠️",
-                value=f"Le role {inter.me.top_role.mention} doit être au dessus de {role_ulb.mention} pour pouvoir update le nom des utilisateurs enregistrés.",
+                value=f"Le rôle {inter.me.top_role.mention} doit être au dessus de {role_ulb.mention} pour pouvoir update le nom des utilisateur.rice.s enregistré.e.s.",
                 inline=False,
             )
         if embed.fields != []:
@@ -137,7 +141,7 @@ class Ulb(commands.Cog):
 
     @commands.slash_command(
         name="info",
-        description="Voir les settings pour ce serveurs",
+        description="Voir les settings pour ce serveur",
         default_member_permissions=disnake.Permissions.all(),
         dm_permission=False,
     )
@@ -166,7 +170,7 @@ class Ulb(commands.Cog):
 
         if inter.guild.me.top_role.permissions.manage_roles != True:
             embed.add_field(
-                name="❌", value="je n'ai pas la permissions de changer les roles des membres.", inline=False
+                name="❌", value="je n'ai pas la permissions de changer les rôles des membres.", inline=False
             )
 
         if guilddata.rename and inter.guild.me.top_role.permissions.manage_nicknames != True:
@@ -185,18 +189,27 @@ class Ulb(commands.Cog):
         if guilddata.rename and inter.me.top_role <= guilddata.role:
             embed.add_field(
                 name="⚠️",
-                value=f"Le role {inter.me.top_role.mention} doit être au dessus de {guilddata.role.mention} pour pouvoir update le nom des utilisateurs enregistrés.",
+                value=f"Le rôle {inter.me.top_role.mention} doit être au dessus de {guilddata.role.mention} pour pouvoir update le nom des utilisateurs enregistrés.",
                 inline=False,
             )
 
         if embed.fields == []:
             embed.add_field(
                 name="✅",
-                value="Pas de conflit de permission",
+                value="Aucun conflit de permission",
             )
         else:
             embed.color = disnake.Colour.orange()
         await inter.edit_original_response(embed=embed)
+
+    @commands.slash_command(name="feedback", description="Envoyer un feedback.")
+    async def feedback(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        type: str = commands.Param(description="type de feedback", choices=[FeedbackType.issu, FeedbackType.improve]),
+    ):
+        logging.trace(f"[Feedback] Starting {type} feedback by {inter.user} from {inter.guild}")
+        await inter.response.send_modal(modal=FeedbackModal(self.bot, type))
 
     @commands.Cog.listener("on_member_join")
     async def on_member_join(self, member: disnake.Member):
@@ -218,8 +231,8 @@ class Ulb(commands.Cog):
             )
             await member.send(
                 embed=disnake.Embed(
-                    title=f"Bienvenu sur le server __**{member.guild.name}**__",
-                    description="""Ce serveur est reservé aux membre de l'ULB.\nPour acceder à ce serveur, tu dois vérifier ton identité avec ton addresse email **ULB** en utilisant la commande **"/ulb"**.""",
+                    title=f"Bienvenue sur le serveur __**{member.guild.name}**__",
+                    description="""Ce serveur est limité aux membre de l'**ULB**.\nPour accéder à ce serveur, tu dois vérifier ton identité avec ton addresse email **ULB** en utilisant la commande **"/ulb"**.""",
                     color=disnake.Color.teal(),
                 ).set_thumbnail(url=self.bot.ULB_image)
             )
@@ -252,8 +265,8 @@ class Ulb(commands.Cog):
                 ):
                     await audit.user.send(
                         embed=disnake.Embed(
-                            title="Modification des permissions du role **ULB**.",
-                            description=f"Vous avez autorisé le role **@{after.name}** du serveur **{after.guild.name}** à modifier son propre pseudo.\nCe role est paramètré comme le role **ULB** qui est attribué automatiquement aux membres ayant vérifiés leur email **ULB** et ce serveur est paramètré pour ces membres soient renommé avec leur vrai nom.\nSi vous gardez les permissions et paramètres actuels, les nouveaux membres vérifiés seront toujours renommés automatiquement mais pourront changer leur pseudo ensuite.\nSi vous désirez changer mes paramètres pour ce serveur, vous pouvez utiliser **/setup** dans le serveur.",
+                            title="Modification des permissions du rôle **ULB**.",
+                            description=f"Vous avez autorisé le rôle **@{after.name}** du serveur **{after.guild.name}** à modifier son propre pseudo.\nCe rôle est paramètré comme le rôle **ULB** qui est attribué automatiquement aux membres ayant vérifiés leur email **ULB** et ce serveur est paramètré pour que ces membres soient renommés avec leur vrai nom.\nSi vous gardez les permissions et paramètres actuels, les nouveaux membres vérifiés seront toujours renommés automatiquement mais pourront changer leur pseudo ensuite.\nSi vous désirez changer mes paramètres pour ce serveur, vous pouvez utiliser **/setup** dans le serveur.",
                             color=disnake.Colour.orange(),
                         )
                     )
@@ -282,8 +295,8 @@ class Ulb(commands.Cog):
                 if audit.target == role:
                     await audit.user.send(
                         embed=disnake.Embed(
-                            title="Supression du role **ULB**.",
-                            description=f"""Vous avez supprimé le role **@{role.name}** du serveur **{role.guild.name}**.\nCe role était paramétré comme le role **ULB** qui était attribué automatiquement aux membres ayant vérifiés leur email **ULB**.\nCette functionnalité a été retirée et vous devez la re-configurer en utilisant **"/setup"** dans le serveur.""",
+                            title="Supression du rôle **ULB**.",
+                            description=f"""Vous avez supprimé le rôle **@{role.name}** du serveur **{role.guild.name}**.\nCe rôle était paramétré comme le rôle **ULB** qui était attribué automatiquement aux membres ayant vérifiés leur email **ULB**.\nCette fonctionnalité a été retirée et vous devrez la re-configurer en utilisant **"/setup"** dans le serveur.""",
                             color=disnake.Colour.red(),
                         )
                     )
@@ -315,14 +328,14 @@ class Ulb(commands.Cog):
             if audit.target == guild.me:
                 embed = disnake.Embed(
                     title="Nouveau serveur",
-                    description=f"Vous venez de m'inviter dans le serveur {guild.name}, mais je n'ai pas les autorisations suffisantes pour être utilisé.\nDonnez moi les autorisations listées ci-dessous et changez la position de mon role ({guild.me.top_role.mention}) dans la liste des roles du serveur pour que je sois juste en dessous des moderateurs.\nPour plus d'informations, consultez la page [github](https://github.com/bepolytech/ULBDiscordBot).",
+                    description=f"Vous venez de m'inviter dans le serveur {guild.name}, mais je n'ai pas les autorisations suffisantes pour être utilisé.\nDonnez moi les autorisations listées ci-dessous et changez la position de mon rôle ({guild.me.top_role.mention}) dans la liste des rôles du serveur pour que je sois juste en dessous des modérateurs.\nPour plus d'informations, consultez ma page [Github](https://github.com/bepolytech/ULBDiscordBot).",
                     color=disnake.Colour.red(),
                 )
                 perms = guild.me.top_role.permissions
                 if perms.manage_roles != True:
                     embed.add_field(
                         name="❌",
-                        value="Je n'ai pas la permissions de **changer les roles**, ce dont j'ai besoin pour ajouter les membres vérifiés au role correspondant.",
+                        value="Je n'ai pas la permissions de **changer les rôles**, ce dont j'ai besoin pour ajouter les membres vérifiés au rôle correspondant.",
                         inline=False,
                     )
                 if perms.manage_nicknames != True:
@@ -338,7 +351,7 @@ class Ulb(commands.Cog):
                     await audit.user.send(
                         embed=disnake.Embed(
                             title="Nouveau serveur",
-                            description=f"Vous venez de m'inviter dans le serveur {guild.name}.\nChangez la position de mon role ({guild.me.top_role.mention}) dans la liste des roles du serveur pour que que je sois juste en dessous des moderateurs.\nUtilisez ensuite la commande **/setup** dans le serveur pour me configurer.\nPour plus d'informations, consultez la page [github](https://github.com/bepolytech/ULBDiscordBot).",
+                            description=f"Vous venez de m'inviter dans le serveur {guild.name}.\nChangez la position de mon rôle ({guild.me.top_role.mention}) dans la liste des rôles du serveur pour que que je sois juste en dessous des modérateurs.\nUtilisez ensuite la commande **/setup** dans le serveur pour me configurer.\nPour plus d'informations, consultez ma page [Github](https://github.com/bepolytech/ULBDiscordBot).",
                             color=disnake.Colour.green(),
                         )
                     )
