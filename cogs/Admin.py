@@ -65,7 +65,7 @@ class Admin(commands.Cog):
         self,
         inter: disnake.ApplicationCommandInteraction,
         user_id: str = commands.Param(
-            description="L'ID discord de l'utilisateur.rice à ajouter.", min_length=18, max_length=18
+            description="L'ID discord de l'utilisateur.rice à ajouter.", min_length=17, max_length=20
         ),
     ):
         user = self.bot.get_user(int(user_id))
@@ -84,7 +84,7 @@ class Admin(commands.Cog):
         self,
         inter: disnake.ApplicationCommandInteraction,
         user_id: str = commands.Param(
-            description="L'ID discord de l'utilisateur.rice ULB à éditer.", min_length=18, max_length=18, default=None
+            description="L'ID discord de l'utilisateur.rice ULB à éditer.", min_length=17, max_length=20, default=None
         ),
         name: str = commands.Param(description="Le nom de l'utilisateur.rice ULB à éditer.", default=None),
         email: str = commands.Param(description="L'email de l'utilisateur.rice ULB à éditer.", default=None),
@@ -238,7 +238,7 @@ class Admin(commands.Cog):
         self,
         inter: disnake.ApplicationCommandInteraction,
         user_id: str = commands.Param(
-            description="L'ID Discord de l'utilisateur.rice ULB à supprimer.", min_length=18, max_length=18
+            description="L'ID Discord de l'utilisateur.rice ULB à supprimer.", min_length=17, max_length=20
         ),
         name: str = commands.Param(description="Le nom ULB de l'utilisateur.rice ULB à supprimer (pour confirmation)"),
         remove_ulb: str = commands.Param(
