@@ -1,7 +1,7 @@
-version: '3.8'
+version: '3.5' # 3.5 because we currently use it on CentOS 7
 services:
   ULBDiscordBot:
-    image: bepolytech/ulbdiscordbot
+    image: bepolytech/ulbdiscordbot:latest # or version like :1.2
     container_name: ULBDiscordBot
     #build:
     #  context: .
@@ -11,4 +11,4 @@ services:
       - .env
     volumes:
       - ./:/usr/src/ulbdiscordbot
-    restart: always
+    restart: always # or unless-stopped
