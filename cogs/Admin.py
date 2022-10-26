@@ -155,8 +155,8 @@ class Admin(commands.Cog):
         inter: disnake.ApplicationCommandInteraction,
         user_id: str = commands.Param(
             description="L'ID Discord de l'utilisateur.rice ULB dont vous voulez voir les informations.",
-            min_length=18,
-            max_length=18,
+            min_length=17,
+            max_length=20,
             default=None,
         ),
         name: str = commands.Param(
