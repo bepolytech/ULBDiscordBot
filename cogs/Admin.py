@@ -64,15 +64,22 @@ class Admin(commands.Cog):
     async def user_set(
         self,
         inter: disnake.ApplicationCommandInteraction,
-        user_id: str = commands.Param(
-            description="L'ID discord de l'utilisateur.rice à ajouter.", min_length=17, max_length=20
-        ),
+        username: str = commands.Param(description="L'utilisateur.rice discord à ajouter."),
     ):
-        user = self.bot.get_user(int(user_id))
+        user = next((user for user in self.bot.users if f"{user.name}#{user.discriminator}" == username))
         if not user:
             await inter.response.send_message(
                 embed=disnake.Embed(
-                    description=f"Pas d'utilisateur.rice discord avec User ID = {user_id}.", color=disnake.Colour.red()
+                    description=f"Pas d'utilisateur.rice discord accessible avec {username}.",
+                    color=disnake.Colour.red(),
+                ),
+                ephemeral=True,
+            )
+        if user in Database.ulb_users.keys():
+            await inter.response.send_message(
+                embed=disnake.Embed(
+                    description=f"L'utilisateur.rice {username} est déjà dans la database. Utilise **/user edit** si tu veux le modifier.",
+                    color=disnake.Colour.orange(),
                 ),
                 ephemeral=True,
             )
@@ -87,6 +94,7 @@ class Admin(commands.Cog):
             description="L'ID discord de l'utilisateur.rice ULB à éditer.", min_length=17, max_length=20, default=None
         ),
         name: str = commands.Param(description="Le nom de l'utilisateur.rice ULB à éditer.", default=None),
+        username: str = commands.Param(description="Le nom d'utilisateur.rice discord", default=None),
         email: str = commands.Param(description="L'email de l'utilisateur.rice ULB à éditer.", default=None),
     ):
         if user_id:
@@ -113,6 +121,18 @@ class Admin(commands.Cog):
                 return
         elif name:
             user = Database.get_user_by_name(name)
+            if user == None:
+                await inter.response.send_message(
+                    embed=disnake.Embed(
+                        title="Info de l'utilisateur.rice",
+                        description=f"Le nom ne correspond à aucun.e utilisateur.rice connu.e",
+                        color=disnake.Colour.orange(),
+                    ),
+                    ephemeral=True,
+                )
+                return
+        elif username:
+            user = next((user for user in self.bot.users if f"{user.name}#{user.discriminator}" == username))
             if user == None:
                 await inter.response.send_message(
                     embed=disnake.Embed(
@@ -153,17 +173,14 @@ class Admin(commands.Cog):
     async def user_info(
         self,
         inter: disnake.ApplicationCommandInteraction,
+        name: str = commands.Param(description="Le nom de l'utilisateur.rice.", default=None),
+        username: str = commands.Param(description="Le nom discord de l'utilisateur.rice", default=None),
+        email: str = commands.Param(description="L'email ULB de l'utilisateur.rice.", default=None),
         user_id: str = commands.Param(
-            description="L'ID Discord de l'utilisateur.rice ULB dont vous voulez voir les informations.",
+            description="L'ID Discord de l'utilisateur.rice.",
             min_length=17,
             max_length=20,
             default=None,
-        ),
-        name: str = commands.Param(
-            description="Le nom de l'utilisateur.rice ULB dont vous voulez voir les informations.", default=None
-        ),
-        email: str = commands.Param(
-            description="L'email de l'utilisateur.rice ULB dont vous voulez voir les informations.", default=None
         ),
     ):
         if user_id:
@@ -200,6 +217,18 @@ class Admin(commands.Cog):
                     ephemeral=True,
                 )
                 return
+        elif username:
+            user = next((user for user in self.bot.users if f"{user.name}#{user.discriminator}" == username))
+            if user == None:
+                await inter.response.send_message(
+                    embed=disnake.Embed(
+                        title="Info de l'utilisateur.rice",
+                        description=f"Le nom discord ne correspond à aucun.e utilisateur.rice connu.e",
+                        color=disnake.Colour.orange(),
+                    ),
+                    ephemeral=True,
+                )
+                return
         elif email:
             user = Database.get_user_by_email(email)
             if user == None:
@@ -216,8 +245,8 @@ class Admin(commands.Cog):
             await inter.response.send_message(
                 embed=disnake.Embed(
                     title="Info de l'utilisateur.rice",
-                    description=f"Spécifiez l'ID, le nom ou l'email dans la commande.",
-                    color=disnake.Colour.orange(),
+                    description=f"Veuillez spécifier au moins un paramètre.",
+                    color=disnake.Colour.red(),
                 ),
                 ephemeral=True,
             )
@@ -237,12 +266,11 @@ class Admin(commands.Cog):
     async def user_delete(
         self,
         inter: disnake.ApplicationCommandInteraction,
-        user_id: str = commands.Param(
-            description="L'ID Discord de l'utilisateur.rice ULB à supprimer.", min_length=17, max_length=20
-        ),
-        name: str = commands.Param(description="Le nom ULB de l'utilisateur.rice ULB à supprimer (pour confirmation)"),
+        name: str = commands.Param(description="Le nom ULB de l'utilisateur.rice"),
+        username: str = commands.Param(description="Le nom discord de l'utilisateur.rice", default=None),
+        user_id: str = commands.Param(description="L'ID Discord de l'utilisateur.rice", min_length=17, max_length=20),
         remove_ulb: str = commands.Param(
-            description="Retirer l'utilisateur.rice du role ULB dans tous les serveurs.", choices=["Oui", "Non"]
+            description="Retirer l'utilisateur.rice du role ULB dans tous les serveurs ?", choices=["Oui", "Non"]
         ),
     ):
         await inter.response.defer(ephemeral=True)
@@ -254,7 +282,6 @@ class Admin(commands.Cog):
                 )
             )
             return
-
         user_data = Database.ulb_users.get(user)
         if not user_data:
             await inter.edit_original_response(
@@ -266,8 +293,16 @@ class Admin(commands.Cog):
 
         if user_data.name.lower() != name.lower():
             await inter.edit_original_response(
-                embed=disnake.Embed(description="L'ID et le nom ne correspondent pas...", color=disnake.Color.red())
+                embed=disnake.Embed(description="L'ID et le nom ULB ne correspondent pas...", color=disnake.Color.red())
             )
+            return
+        if f"{user.name}#{user.discriminator}" != username:
+            await inter.edit_original_response(
+                embed=disnake.Embed(
+                    description="L'ID et le nom discord ne correspondent pas...", color=disnake.Color.red()
+                )
+            )
+            return
         else:
             Database.delete_user(user)
             error_roles = []
@@ -308,6 +343,73 @@ class Admin(commands.Cog):
                 embed=embed,
             )
 
+    @commands.slash_command(name="server", default_member_permissions=disnake.Permissions.all())
+    async def server(self, inter: disnake.ApplicationCommandInteraction):
+        pass
+
+    @server.sub_command(
+        name="info", description="Voir les informations d'un server utilisant le bot (un seul paramètre requis)."
+    )
+    async def server_info(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        name: str = commands.Param(description="Le nom du server", default=None),
+        id: str = commands.Param(description="L'id du server", default=None),
+    ):
+        await inter.response.defer(ephemeral=True)
+        if id:
+            guild = self.bot.get_guild(int(id))
+            if not guild:
+                await inter.edit_original_response(
+                    embed=disnake.Embed(
+                        title="Info du server",
+                        description=f"L'id {id} ne correspond à aucun server accessible par le bot.",
+                        color=disnake.Color.red(),
+                    )
+                )
+                return
+        elif name:
+            guild = self.bot.get_guild(int(name.split("#")[1]))
+            if not guild:
+                await inter.edit_original_response(
+                    embed=disnake.Embed(
+                        title="Info du server",
+                        description=f"Le nom {name} ne correspond à aucun server accessible par le bot.",
+                        color=disnake.Color.red(),
+                    )
+                )
+                return
+        else:
+            await inter.edit_original_response(
+                embed=disnake.Embed(
+                    title="Info du server",
+                    description=f"Veuillez spécifier au moins un paramètre.",
+                    color=disnake.Color.red(),
+                )
+            )
+            return
+        if guild not in Database.ulb_guilds.keys():
+            await inter.edit_original_response(
+                embed=disnake.Embed(
+                    title="Info du server",
+                    description=f"Le server {guild.name}#{guild.id} n'est pas configuré pour utiliser le bot.",
+                    color=disnake.Color.orange(),
+                )
+            )
+            return
+
+        number_registered_user = len(
+            [1 for _, member in enumerate(guild.members) if member in Database.ulb_users.keys()]
+        )
+        guild_data = Database.ulb_guilds.get(guild)
+        await inter.edit_original_response(
+            embed=disnake.Embed(
+                title="Info du server",
+                description=f"**Nom :** {guild.name}\n**ID :** `{guild.id}`\n**Role :** @{guild_data.role.name}\n**Role ID :** `{guild_data.role.id}`\n**Rename :** `{'Oui' if guild_data.rename else 'Non'}`\n**Nombre de membre vérifié :** `{number_registered_user}`",
+                color=disnake.Color.green(),
+            )
+        )
+
     @user_edit.autocomplete("user_id")
     @user_info.autocomplete("user_id")
     @user_delete.autocomplete("user_id")
@@ -322,6 +424,24 @@ class Admin(commands.Cog):
             str(userdata.name) for userdata in Database.ulb_users.values() if str(userdata.name).startswith(user_input)
         ]
 
+    @user_set.autocomplete("username")
+    async def user_set_autocomplete(self, inter: disnake.ApplicationCommandInteraction, user_input: str):
+        return [
+            f"{user.name}#{user.discriminator}"
+            for user in self.bot.users
+            if str(user.name).startswith(user_input) and user not in Database.ulb_users.keys()
+        ]
+
+    @user_edit.autocomplete("username")
+    @user_info.autocomplete("username")
+    @user_delete.autocomplete("username")
+    async def username_autocomplete(self, inter: disnake.ApplicationCommandInteraction, user_input: str):
+        return [
+            f"{user.name}#{user.discriminator}"
+            for user in Database.ulb_users.keys()
+            if str(user.name).startswith(user_input)
+        ]
+
     @user_edit.autocomplete("email")
     @user_info.autocomplete("email")
     async def email_autocomplete(self, inter: disnake.ApplicationCommandInteraction, user_input: str):
@@ -329,6 +449,18 @@ class Admin(commands.Cog):
             str(userdata.email)
             for userdata in Database.ulb_users.values()
             if str(userdata.email).startswith(user_input) and userdata.email != "N/A"
+        ]
+
+    @server_info.autocomplete("id")
+    async def email_autocomplete(self, inter: disnake.ApplicationCommandInteraction, user_input: str):
+        return [str(server.id) for server in Database.ulb_guilds.keys() if str(server.id).startswith(user_input)]
+
+    @server_info.autocomplete("name")
+    async def email_autocomplete(self, inter: disnake.ApplicationCommandInteraction, user_input: str):
+        return [
+            f"{server.name}#{server.id}"
+            for server in Database.ulb_guilds.keys()
+            if str(server.name).startswith(user_input)
         ]
 
 
