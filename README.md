@@ -191,6 +191,7 @@ docker-compose up -d
 To see the bot logs when running with docker in detached mode (`-d`), use the [docker logs for the container](https://docs.docker.com/engine/reference/commandline/logs/).
 
 ## 💠 Bot usage
+> TODO add `/server info` and `/user *` with other parameters to docs
 
 ### ULB servers
 
