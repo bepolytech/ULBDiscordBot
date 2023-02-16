@@ -228,10 +228,6 @@ Edit info of a user.
 
 Delete a user.
 
-* `/server info`
-
-Get information about a guild (ULB role, number of registered members, ...)
-
 * `/update`
 
 This forces a total update of the database and of all the servers. Since the bot already does this automatically at startup and after each reconnection, the only normal usecase for this would be if you manually add an entry (server or user) to the google sheet instead of using the `/user add` command above, we don't recommend manually editing the google sheet.
