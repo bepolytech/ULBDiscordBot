@@ -401,12 +401,32 @@ class Admin(commands.Cog):
         number_registered_user = len(
             [1 for _, member in enumerate(guild.members) if member in Database.ulb_users.keys()]
         )
+
+        n_registered = len(Database.ulb_guilds.get(guild).role.members)
+        percent = int(n_registered / guild.member_count * 100)
+
         guild_data = Database.ulb_guilds.get(guild)
         await inter.edit_original_response(
             embed=disnake.Embed(
                 title="Info du server",
-                description=f"**Nom :** {guild.name}\n**ID :** `{guild.id}`\n**Role :** @{guild_data.role.name}\n**Role ID :** `{guild_data.role.id}`\n**Rename :** `{'Oui' if guild_data.rename else 'Non'}`\n**Nombre de membre vérifié :** `{number_registered_user}`",
-                color=disnake.Color.green(),
+                description=f"**Nom :** {guild.name}\n**ID :** `{guild.id}`\n**Role :** @{guild_data.role.name}\n**Role ID :** `{guild_data.role.id}`\n**Rename :** `{'Oui' if guild_data.rename else 'Non'}`\n**Nombre de membre vérifié :** `{n_registered} ({percent}%)`",
+                color=disnake.Color.blue(),
+            )
+        )
+
+    @commands.slash_command(
+        name="stats",
+        default_member_permissions=disnake.Permissions.all(),
+        description="Voir les statistiques d'utilisation du bot.",
+    )
+    async def stats(self, inter: disnake.ApplicationCommandInteraction):
+        await inter.response.defer(ephemeral=True)
+
+        await inter.edit_original_response(
+            embed=disnake.Embed(
+                title="Statistique du bot",
+                description=f"**Servers configurés : **`{len(Database.ulb_guilds)}`\n**Membres vérifiés : **`{len(Database.ulb_users)}`",
+                color=disnake.Colour.blue(),
             )
         )
 
