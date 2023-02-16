@@ -191,7 +191,6 @@ docker-compose up -d
 To see the bot logs when running with docker in detached mode (`-d`), use the [docker logs for the container](https://docs.docker.com/engine/reference/commandline/logs/).
 
 ## 💠 Bot usage
-> TODO add `/server info` and `/user *` with other parameters to docs
 
 ### ULB servers
 
@@ -206,6 +205,10 @@ To see the bot logs when running with docker in detached mode (`-d`), use the [d
 * `/ulb`
 
 Once the ULB role is set, when a new user joins the server, either they are already registered (from another of your servers) in which case they will get the `@ULB` role and get renamed, or they are not registered yet and will receive a DM message with the instructions to register themselves using the `/ulb` command.
+
+* `/feedback`
+
+Send a feedback directly from discord.
 
 ### Admin server
 
@@ -224,6 +227,10 @@ Edit info of a user.
 * `/user delete`
 
 Delete a user.
+
+* `/server info`
+
+Get information about a guild (ULB role, number of registered members, ...)
 
 * `/update`
 
