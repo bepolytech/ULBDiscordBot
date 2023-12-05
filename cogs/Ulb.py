@@ -19,10 +19,11 @@ class Ulb(commands.Cog):
 
     @commands.Cog.listener("on_ready")
     async def on_ready(self):
-        Database.load(self.bot)
-        Registration.setup(self)
-        logging.info("[Cog:Ulb] Ready !")
-        await utils.update_all_guilds()
+        await Database.load(self.bot)
+        if (Database.loaded):
+            Registration.setup(self)
+            logging.info("[Cog:Ulb] Ready !")
+            await utils.update_all_guilds()
 
     async def wait_setup(self, inter: disnake.ApplicationCommandInteraction) -> None:
         """Async sleep until GoogleSheet is loaded and RegistrationForm is set"""
@@ -162,12 +163,9 @@ class Ulb(commands.Cog):
             )
             return
 
-        n_registered = len(guilddata.role.members)
-        percent = int(n_registered / inter.guild.member_count * 100)
-
         embed = disnake.Embed(
             title="Info du serveur",
-            description=f"ULB role : {guilddata.role.mention}\nNombre de membre vérifié : **{n_registered}** *({percent}%)*\nRenommer les membres : **{'oui' if guilddata.rename else 'non'}**",
+            description=f"ULB role : {guilddata.role.mention}\nRenommer les membres : **{'oui' if guilddata.rename else 'non'}**",
             color=disnake.Color.green(),
         )
 
