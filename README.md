@@ -1,3 +1,7 @@
+![Python Version badge](https://img.shields.io/badge/python-3.10-blue)
+![Disnake version](https://img.shields.io/badge/disnake-2.7-yellow)
+[![Build test docker image](https://github.com/bepolytech/ULBDiscordBot/actions/workflows/build_test.docker.yml/badge.svg)](https://github.com/bepolytech/ULBDiscordBot/actions/workflows/build_test.docker.yml)
+
 <img padding="5px" align="right" height="300" src="https://user-images.githubusercontent.com/23436953/193432193-4b5573ab-8dc1-4aa5-ba4e-6c52017605ef.png">
 
 # ULBDiscordBot
