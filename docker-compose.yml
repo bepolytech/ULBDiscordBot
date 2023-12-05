@@ -12,3 +12,5 @@ services:
     volumes:
       - ./:/usr/src/ulbdiscordbot
     restart: always # or unless-stopped
+    mem_limit: 1g # memory limit for the container
+    # cpus: 0.5 # cpu limit for the container

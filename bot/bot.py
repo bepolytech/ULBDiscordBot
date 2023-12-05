@@ -96,11 +96,24 @@ class Bot(InteractionBot):
                     )
                     self.cog_not_loaded.append(extension)
 
-    async def send_error_log(self, interaction: ApplicationCommandInteraction, error: Exception):
+    async def send_error_log(self, tb: str):
+
+        n = len(tb) // 4050
+
+        #Logs need to be diveded into multiple embed due to size limitation
+        # TODO Check if we can use a list of embeds and one message
+        # TODO Make it dynamic base on the message size from the lib (check library version, maybe need to upgrade)
+        for i in range(n):
+            await self.log_channel.send(embed=disnake.Embed(description=f"```python\n{tb[4050*i:4050*(i+1)]}```"))
+        await self.log_channel.send(embed=disnake.Embed(description=f"```python\n{tb[4050*n:]}```"))
+
+    async def send_cmd_error_log(self, interaction: ApplicationCommandInteraction, error: Exception):
         tb = self.tracebackEx(error)
         logging.error(
             f"{error} raised on command /{interaction.application_command.name} from {interaction.guild.name+'#'+interaction.channel.name if interaction.guild else 'DM'} by {interaction.author.name}.\n{tb}"
         )
+
+        #Send error msg to the user
         await interaction.send(
             content=self.owner.mention,
             embed=disnake.Embed(
@@ -110,6 +123,8 @@ class Bot(InteractionBot):
             ),
             delete_after=10,
         )
+
+        #Send logs to admins
         await self.log_channel.send(
             embed=disnake.Embed(title=f":x: __** ERROR**__ :x:", description=f"```{error}```").add_field(
                 name=f"Raised on command :",
@@ -117,10 +132,7 @@ class Bot(InteractionBot):
                 + (f" and target\n``'{interaction.target}``'." if interaction.target else "."),
             )
         )
-        n = len(tb) // 4050
-        for i in range(n):
-            await self.log_channel.send(embed=disnake.Embed(description=f"```python\n{tb[4050*i:4050*(i+1)]}```"))
-        await self.log_channel.send(embed=disnake.Embed(description=f"```python\n{tb[4050*n:]}```"))
+        await self.send_error_log(tb)
 
     async def on_slash_command(self, interaction: disnake.ApplicationCommandInteraction) -> None:
         logging.trace(
@@ -138,13 +150,13 @@ class Bot(InteractionBot):
         )
 
     async def on_slash_command_error(self, interaction: ApplicationCommandInteraction, error: Exception) -> None:
-        await self.send_error_log(interaction, error)
+        await self.send_cmd_error_log(interaction, error)
 
     async def on_user_command_error(self, interaction: disnake.UserCommandInteraction, error: Exception) -> None:
-        await self.send_error_log(interaction, error)
+        await self.send_cmd_error_log(interaction, error)
 
     async def on_message_command_error(self, interaction: disnake.MessageCommandInteraction, error: Exception) -> None:
-        await self.send_error_log(interaction, error)
+        await self.send_cmd_error_log(interaction, error)
 
     async def on_slash_command_completion(self, interaction: disnake.ApplicationCommandInteraction) -> None:
         logging.trace(
