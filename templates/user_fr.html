@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="fr">
+
+<head>
+  <meta charset="utf-8">
+  <!--<link rel="stylesheet" href="./css/style.css">-->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+
+<body>
+    <section class="flex-sect" id="iqw1p">
+      <div class="container-width" id="ixcsj">
+        <div class="gjs-row" id="iwp1uq">
+          <div class="gjs-cell" id="iwc1yl">
+            <div class="flex-title" id="isl2q">Hello, <i id="ibgfgw">{{ user.name }} {{ user.surname }}</i>
+            </div>
+          </div>
+        </div>
+      <div class="gjs-title-row" id="iggerx">
+        <div class="gjs-cell" id="i87qsk">
+          <i id="ijsy0p">{{ user.email }}
+          </i>
+          <a href="/logout" class="button-light logout-button" id="ihlfcn"><span id="i2e4vk">Logout</span><i style="font-size: 1.4em; margin-left: 1rem;" class="fa fa-sign-out logout-icon" >
+            </i></a>
+        </div>
+      </div>
+        <div class="gjs-row" id="i33md">
+          <div class="gjs-cell" id="ihc9u">
+            <div id="iu6vy">Votre compte ULB et Discord sont bien reliés. Vous devriez avoir accès aux serveurs Discord
+              réservés pour la communauté étudiante.</div>
+          </div>
+        </div>
+        <div class="gjs-row" id="iddg46">
+          <div class="gjs-cell" id="ieybnm">
+            <h3 id="ivs5rm">Votre username Discord: <b><i id="i7esag">{{ user.discord_username }}
+                </i></b></h3>
+          </div>
+        </div>
+        <div class="gjs-row" id="iwekp">
+          <div class="gjs-cell" id="ipcq2">
+              <a href="/unlink_discord" class="button-light" id="discord-unlink-button">
+                <img src="https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a69f118df70ad7828d4_icon_clyde_blurple_RGB.svg" class="button-icon"/>
+                <span>Unlink Discord</span>
+            </a>
+          </div>
+        </div>
+        <div class="gjs-row" id="iy5iar">
+          <div class="gjs-cell" id="im6ow7">
+            <div id="icf2hf"><h3 style="margin: 0; padding: 0; margin-top: 0.4em; text-decoration: underline;">Attention:</h3><br />Si vous déliez votre compte Discord associé, celui-ci perdra sans-doute ses accès aux serveurs réservés où le bot est setup. Il vous est cependant tout a fait possible de le relier à nouveau juste après.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <footer class="footer-under" id="ikn8eu">
+      <div class="gjs-row" id="iqzgmk">
+        <div class="gjs-cell" id="ida3de">
+          <div class="foot-list" id="ia6p6n">
+            <a class="foot-list-title" id="ilrigm">About the service</a><br>
+            <a class="foot-list-item" id="i6reyx">About</a><br>
+            <a class="foot-list-item" id="iasa1u">Add the bot to my server</a><br>
+            <a class="foot-list-item" id="id06ls">Help</a><br>
+            <a class="foot-list-item" id="i3vgf2">Contact us</a><br>
+          </div>
+        </div>
+        <div class="gjs-cell" id="ieb6rq">
+          <div class="foot-list" id="iv0ipc">
+            <a class="foot-list-title" id="ihqc28">Documentation</a><br>
+            <a class="foot-list-item" id="i81hv6">As a user</a><br>
+            <a class="foot-list-item" id="if9l8d">As a server admin</a><br>
+            <a class="foot-list-item" id="iasa1u">Github Repository</a><br>
+            <a class="foot-list-item" id="iasa1u">DockerHub Image</a><br>
+          </div>
+        </div>
+      </div>
+      <div class="container-width">
+        <div class="footer-container" id="ik0nkh">
+          <div class="foot-lists">
+            <div class="clearfix"></div>
+          </div>
+          <div class="form-sub"></div>
+        </div>
+      </div>
+      <div class="copyright" id="i5q8b3">
+        <div class="container-width">
+          <div class="made-with" id="inesqo">Made with ❤️ by <a href="https://github.com/LucasPlacentino"
+              id="i6s78" target="_blank">Lucas Placentino</a> and <a href="https://github.com/OscarVsp" id="il8zp"
+              target="_blank">Oscar Van Slijpe</a> for the <a href="https://bepolytech.be" id="i6zlq">BEP</a> and the
+            ULB student community.<br><em>This service is neither officially related or endorsed by the Université libre de Bruxelles.</em></div>
+          <div class="foot-social-btns">facebook twitter linkedin mail</div>
+          <a href="/switch_to_english" class="lang-button unselected-lang">EN</a>
+          <a class="lang-button selected-lang">FR</a>
+          <div class="clearfix"></div>
+        </div>
+      </div>
+    </footer>
+  </body>
+
+</html>

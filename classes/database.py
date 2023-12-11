@@ -94,7 +94,7 @@ class Database:
         return cls._loaded
 
     @classmethod
-    def load(cls, bot: Bot) -> None:
+    async def load(cls, bot: Bot) -> bool:
         """Load the data from the google sheet.
 
         Returns
@@ -104,31 +104,35 @@ class Database:
             - Guild: `Dict[disnake.Guild, disnake.Role]`
             - Users: `Dict[disnake.User, UlbUser]]`
         """
-        # First time this is call, we need to load the credentials and the sheet
-        if not cls._sheet:
-            cred_dict = {}
-            cred_dict["type"] = os.getenv("GS_TYPE")
-            cred_dict["project_id"] = os.getenv("GS_PROJECT_ID")
-            cred_dict["auth_uri"] = os.getenv("GS_AUTHOR_URI")
-            cred_dict["token_uri"] = os.getenv("GS_TOKEN_URI")
-            cred_dict["auth_provider_x509_cert_url"] = os.getenv("GS_AUTH_PROV")
-            cred_dict["client_x509_cert_url"] = os.getenv("GS_CLIENT_CERT_URL")
-            cred_dict["private_key"] = os.getenv("GS_PRIVATE_KEY").replace(
-                "\\n", "\n"
-            )  # Python add a '\' before any '\n' when loading a str
-            cred_dict["private_key_id"] = os.getenv("GS_PRIVATE_KEY_ID")
-            cred_dict["client_email"] = os.getenv("GS_CLIENT_EMAIL")
-            cred_dict["client_id"] = int(os.getenv("GS_CLIENT_ID"))
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(cred_dict, cls._scope)
-            cls._client = gspread.authorize(creds)
-            logging.info("[Database] Google sheet credentials loaded.")
+        try:
+            # First time this is call, we need to load the credentials and the sheet
+            if not cls._sheet:
+                cred_dict = {}
+                cred_dict["type"] = os.getenv("GS_TYPE")
+                cred_dict["project_id"] = os.getenv("GS_PROJECT_ID")
+                cred_dict["auth_uri"] = os.getenv("GS_AUTHOR_URI")
+                cred_dict["token_uri"] = os.getenv("GS_TOKEN_URI")
+                cred_dict["auth_provider_x509_cert_url"] = os.getenv("GS_AUTH_PROV")
+                cred_dict["client_x509_cert_url"] = os.getenv("GS_CLIENT_CERT_URL")
+                cred_dict["private_key"] = os.getenv("GS_PRIVATE_KEY").replace(
+                    "\\n", "\n"
+                )  # Python add a '\' before any '\n' when loading a str
+                cred_dict["private_key_id"] = os.getenv("GS_PRIVATE_KEY_ID")
+                cred_dict["client_email"] = os.getenv("GS_CLIENT_EMAIL")
+                cred_dict["client_id"] = int(os.getenv("GS_CLIENT_ID"))
+                creds = ServiceAccountCredentials.from_json_keyfile_dict(cred_dict, cls._scope)
+                cls._client = gspread.authorize(creds)
+                logging.info("[Database] Google sheet credentials loaded.")
 
-            # Open google sheet
-            cls._sheet = cls._client.open_by_url(os.getenv("GOOGLE_SHEET_URL"))
-            cls._users_ws = cls._sheet.worksheet("users")
-            cls._guilds_ws = cls._sheet.worksheet("guilds")
+                # Open google sheet
+                cls._sheet = cls._client.open_by_url(os.getenv("GOOGLE_SHEET_URL"))
+                cls._users_ws = cls._sheet.worksheet("users")
+                cls._guilds_ws = cls._sheet.worksheet("guilds")
 
-            logging.info("[Database] Spreadsheed loaded")
+                logging.info("[Database] Spreadsheed loaded")
+        except (ValueError, gspread.exceptions.SpreadsheetNotFound, gspread.exceptions.WorksheetNotFound) as err:
+            await bot.send_error_log(bot.tracebackEx(err))
+            return
 
         logging.info("[Database] Loading data...")
 

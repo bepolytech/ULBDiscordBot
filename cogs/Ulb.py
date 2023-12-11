@@ -19,10 +19,11 @@ class Ulb(commands.Cog):
 
     @commands.Cog.listener("on_ready")
     async def on_ready(self):
-        Database.load(self.bot)
-        Registration.setup(self)
-        logging.info("[Cog:Ulb] Ready !")
-        await utils.update_all_guilds()
+        await Database.load(self.bot)
+        if (Database.loaded):
+            Registration.setup(self)
+            logging.info("[Cog:Ulb] Ready !")
+            await utils.update_all_guilds()
 
     async def wait_setup(self, inter: disnake.ApplicationCommandInteraction) -> None:
         """Async sleep until GoogleSheet is loaded and RegistrationForm is set"""
