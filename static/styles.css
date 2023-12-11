@@ -669,3 +669,30 @@ button:hover {
     background-color: red;
     color: #ffffff;
 }
+
+#iwp2uq {
+    
+}
+
+#iwc2yl {
+    align-self: center;
+    justify-content: center;
+    display: flex;
+    //margin: 0 0 16px 0;
+    align-items: flex-end;
+    font-size: 4rem;
+    font-weight: 700;
+}
+
+#if7j6 {
+    color: #000000;
+    font-weight: 500;
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 1.4em;
+}
+
+#if8j7 {
+    border: 3px solid black;
+    border-radius: 10px;
+    padding: 0.4em;
+}
