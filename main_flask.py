@@ -1,14 +1,18 @@
 from flask import Flask, render_template
+from flask_login import LoginManager # TODO: user session management
+from user import User # TODO:
   
-app = Flask(__name__) 
-  
-  
+app = Flask(__name__)
+login_manager = LoginManager()
+login_manager.init_app(app)
+ 
 @app.route("/") 
 def home(): 
     return render_template("home.html", user=user) 
   
   
 @app.route("/discord-login") 
+@login_required
 def discord_login(): 
     if user.site_lang = "en":
         return render_template("discord-login_en.html"; user=user)
@@ -16,7 +20,8 @@ def discord_login():
         return render_template("discord-login_fr.html", user=user) 
   
   
-@app.route("/user") 
+@app.route("/user")
+@login_required
 def user(): 
     if user.site_lang = "en":
         return render_template("user_en.html", user=user)
