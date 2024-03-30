@@ -141,7 +141,7 @@ async def update_guild(guild: disnake.Guild, *, role: disnake.Role = None, renam
             await update_member(member, role=role, rename=rename)
 
 
-async def update_all_guilds() -> None:
+async def update_all_guilds(force_rename: bool = False) -> None:
     """Update all guilds.
 
     This create tasks to do it.
@@ -149,7 +149,7 @@ async def update_all_guilds() -> None:
     logging.info("[Utils] Checking all guilds...")
     await asyncio.gather(
         *[
-            update_guild(guild, role=guild_data.role, rename=guild_data.rename)
+            update_guild(guild, role=guild_data.role, rename=force_rename if guild_data.rename else guild_data.rename) # force rename users only if both the guild has rename enabled and the admin set the update to force rename true
             for guild, guild_data in Database.ulb_guilds.items()
         ]
     )
