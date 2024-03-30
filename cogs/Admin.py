@@ -26,12 +26,21 @@ class Admin(commands.Cog):
         default_member_permissions=disnake.Permissions.all(),
         dm_permission=False,
     )
-    async def update(self, inter: disnake.ApplicationCommandInteraction):
+    async def update(
+        self,
+        inter: disnake.ApplicationCommandInteraction,
+        rename: str = commands.Param(
+            description="Forcer un rename à tous les utilisateur.rice.s avec l'update ? (Seulment dans les serveurs ayant le rename d'activé)",
+            default="Non",
+            choices=["Non", "Oui"],
+        ),
+    ):
+        force_rename = rename == "Oui"  # Convert from str to bool
         await inter.response.defer(ephemeral=True)
         Database.load(self.bot)
-        await utils.update_all_guilds()
+        await utils.update_all_guilds(force_rename)
         await inter.edit_original_response(
-            embed=disnake.Embed(description="All servers updated !", color=disnake.Color.green())
+            embed=disnake.Embed(description=f"All servers updated !{" Members renamed." if force_rename else ""}", color=disnake.Color.green())
         )
 
     @commands.slash_command(
