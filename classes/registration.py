@@ -9,6 +9,7 @@ from typing import Coroutine
 from typing import Dict
 from typing import List
 from typing import Tuple
+from string import ascii_letters
 
 import disnake
 from disnake.ext import commands
@@ -519,7 +520,10 @@ class Registration:
             The modal interaction that triggered the step
         """
         # Extract name and store the user
-        name = " ".join([name.title() for name in self.email.split("@")[0].split(".")])
+        allowed_chars = set(ascii_letters + " ") # or set('abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+        unfiltered_name = " ".join([name.title() for name in self.email.split("@")[0].split(".")])
+        name = "".join(filter(allowed_chars.__contains__, unfiltered_name)) # remove all characters that aren't ASCII letters or a space
+        
         logging.trace(f"[RegistrationForm] [User:{self.target.id}] Extracted name from email= {name}")
         Database.set_user(self.target, name, self.email)
         await self._stop()
