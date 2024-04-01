@@ -30,7 +30,7 @@ class Admin(commands.Cog):
         self,
         inter: disnake.ApplicationCommandInteraction,
         rename: str = commands.Param(
-            description="Forcer un rename à tous les utilisateur.rice.s avec l'update ? (Seulment dans les serveurs ayant le rename d'activé)",
+            description="Forcer un rename à tous les utilisateur.rice.s avec l'update ? (Seulement dans les serveurs ayant le rename d'activé)",
             default="Non",
             choices=["Non", "Oui"],
         ),
