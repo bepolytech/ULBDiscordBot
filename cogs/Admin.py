@@ -37,11 +37,12 @@ class Admin(commands.Cog):
     ):
         force_rename = rename == "Oui"  # Convert from str to bool
         await inter.response.defer(ephemeral=True)
-        Database.load(self.bot)
-        await utils.update_all_guilds(force_rename)
-        await inter.edit_original_response(
-            embed=disnake.Embed(description=f"All servers updated !{" Members renamed." if force_rename else ""}", color=disnake.Color.green())
-        )
+        await Database.load(self.bot)
+        if (Database.loaded):
+            await utils.update_all_guilds(force_rename)
+            await inter.edit_original_response(
+                embed=disnake.Embed(description=f"All servers updated !{" Members renamed." if force_rename else ""}", color=disnake.Color.green())
+            )
 
     @commands.slash_command(
         name="yearly-update",
