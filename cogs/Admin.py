@@ -28,11 +28,12 @@ class Admin(commands.Cog):
     )
     async def update(self, inter: disnake.ApplicationCommandInteraction):
         await inter.response.defer(ephemeral=True)
-        Database.load(self.bot)
-        await utils.update_all_guilds()
-        await inter.edit_original_response(
-            embed=disnake.Embed(description="All servers updated !", color=disnake.Color.green())
-        )
+        await Database.load(self.bot)
+        if (Database.loaded):
+            await utils.update_all_guilds()
+            await inter.edit_original_response(
+                embed=disnake.Embed(description="All servers updated !", color=disnake.Color.green())
+            )
 
     @commands.slash_command(
         name="yearly-update",
