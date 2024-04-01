@@ -208,7 +208,7 @@ Once the ULB role is set, when a new user joins the server, either they are alre
 
 * `/feedback`
 
-Send a feedback directly from discord.
+Send feedback directly from discord.
 
 ### Admin server
 
@@ -234,7 +234,7 @@ Get information about a guild (ULB role, number of registered members, ...)
 
 * `/stats`
 
-Get statistics about the bot usage (nombre of configured servers, number of registered users, ...)
+Get statistics about the bot usage (number of configured servers, number of registered users, ...)
 
 * `/update`
 
