@@ -1,9 +1,5 @@
-#FROM python:3
-FROM python:3.11.6-alpine
-# use python:3.11.0rc2-slim for less vulnerabilities ? (from `docker scan`)
-# use python:3.8.6 for no pip dependencies build errors ?
-# use python:alpine for reduced size
-# => python:3.8.6-alpine
+#FROM python:3 # use alpine for reduced size
+FROM python:3.11.8-alpine
 
 WORKDIR /usr/src/ulbdiscordbot
 
