@@ -22,7 +22,7 @@ google-auth-oauthlib==0.5.3
 gspread==5.5.0
 httplib2==0.20.4
 identify==2.5.5
-idna==3.4
+idna==3.7
 lor-deckcodes==5.0.0
 #multidict==6.0.2
 multidict==6.0.4
