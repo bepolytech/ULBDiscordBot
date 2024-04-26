@@ -41,7 +41,7 @@ class Admin(commands.Cog):
         if (Database.loaded):
             await utils.update_all_guilds(force_rename)
             await inter.edit_original_response(
-                embed=disnake.Embed(description=f"All servers updated !{" Members renamed." if force_rename else ""}", color=disnake.Color.green())
+                embed=disnake.Embed(description=f"All servers updated !{' Members renamed.' if force_rename else ''}", color=disnake.Color.green())
             )
 
     @commands.slash_command(
@@ -431,7 +431,7 @@ class Admin(commands.Cog):
     @user_delete.autocomplete("name")
     async def name_autocomplete(self, inter: disnake.ApplicationCommandInteraction, user_input: str):
         return [
-            str(userdata.name) for userdata in Database.ulb_users.values() if str(userdata.name).startswith(user_input)
+            str(userdata.name) for userdata in Database.ulb_users.values() if str(userdata.name.lower()).startswith(user_input.lower())
         ]
 
     @user_set.autocomplete("username")
@@ -439,7 +439,7 @@ class Admin(commands.Cog):
         return [
             f"{user.name}#{user.discriminator}"
             for user in self.bot.users
-            if str(user.name).startswith(user_input) and user not in Database.ulb_users.keys()
+            if str(user.name.lower()).startswith(user_input.lower()) and user not in Database.ulb_users.keys()
         ]
 
     @user_edit.autocomplete("username")
@@ -449,7 +449,7 @@ class Admin(commands.Cog):
         return [
             f"{user.name}#{user.discriminator}"
             for user in Database.ulb_users.keys()
-            if str(user.name).startswith(user_input)
+            if str(user.name.lower()).startswith(user_input.lower())
         ]
 
     @user_edit.autocomplete("email")
@@ -458,7 +458,7 @@ class Admin(commands.Cog):
         return [
             str(userdata.email)
             for userdata in Database.ulb_users.values()
-            if str(userdata.email).startswith(user_input) and userdata.email != "N/A"
+            if str(userdata.email.lower()).startswith(user_input.lower()) and userdata.email != "N/A"
         ]
 
     @server_info.autocomplete("id")
@@ -470,7 +470,7 @@ class Admin(commands.Cog):
         return [
             f"{server.name}#{server.id}"
             for server in Database.ulb_guilds.keys()
-            if str(server.name).startswith(user_input)
+            if str(server.name.lower()).startswith(user_input.lower())
         ]
 
 
