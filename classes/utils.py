@@ -79,6 +79,17 @@ async def update_member(member: disnake.Member, *, name: str = None, role: disna
     if rename == None:
         rename = Database.ulb_guilds.get(member.guild).rename
 
+    if role not in member.roles:
+        try:
+            await member.add_roles(role)
+            logging.info(f"[Utils:update_member] [User:{member.id}] [Guild:{member.guild.id}] Add role={role.id}")
+        except HTTPException as ex:
+            logging.error(
+                f'[Utils:update_member] [User:{member.id}] [Guild:{member.guild.id}] Not able to add ulb role "{role.name}:{role.id}" to ulb user "{member.name}:{member.id}": {ex}'
+            )
+    else:
+        logging.trace(f"[Utils:update_member] [User:{member.id}] [Guild:{member.guild.id}] role={role.id} already set")
+
     if rename:
         if name == None:
             name = Database.ulb_users.get(member).name
@@ -90,14 +101,11 @@ async def update_member(member: disnake.Member, *, name: str = None, role: disna
                 logging.warning(
                     f'[Utils:update_user] [User:{member.id}] [Guild:{member.guild.id}] Not able to edit user "{member.name}:{member.id}" nick to "{name}": {ex}'
                 )
-    if role not in member.roles:
-        try:
-            await member.add_roles(role)
-            logging.info(f"[Utils:update_user] [User:{member.id}] [Guild:{member.guild.id}] Set role={role.id}")
-        except HTTPException as ex:
-            logging.error(
-                f'[Utils:update_user] [User:{member.id}] [Guild:{member.guild.id}] Not able to add ulb role "{role.name}:{role.id}" to ulb user "{member.name}:{member.id}": {ex}'
-            )
+        else:
+            logging.trace(f"[Utils:update_user] [User:{member.id}] [Guild:{member.guild.id}] name={name} already set")
+    else:
+        logging.trace(f"[Utils:update_member] [User:{member.id}] [Guild:{member.guild.id}] Skip renaming")
+    
 
 
 async def update_user(user: disnake.User, *, name: str = None):
@@ -110,13 +118,19 @@ async def update_user(user: disnake.User, *, name: str = None):
     name : `Optional[str]`
         The name to use instead of fetching the database.
     """
+    logging.trace(f"[Utils:update_user] [User:{user.id}] Start")
     if name == None:
         name = Database.ulb_users.get(user).name
     for guild, guild_data in Database.ulb_guilds.items():
         member = guild.get_member(user.id)
         if member:
-            await update_member(member, name=name, role=guild_data.role, rename=guild_data.rename)
-
+            try:
+                await update_member(member, name=name, role=guild_data.role, rename=guild_data.rename)
+            except RoleNotInGuildError:
+                logging.warning(
+                    f"[Utils:update_user] [User:{user.id}] [Guild:{guild.id}] The role registered ulb role @{guild_data.role.name} is not found"
+                )
+    logging.trace(f"[Utils:update_user] [User:{user.id}] End")
 
 async def update_guild(guild: disnake.Guild, *, role: disnake.Role = None, rename: bool = None) -> None:
     """Update a given guilds.
@@ -132,13 +146,21 @@ async def update_guild(guild: disnake.Guild, *, role: disnake.Role = None, renam
     rename : `Optional[bool]`
         Does the guild force rename or not
     """
+    loggind.trace(f"[Utils:update_guild] [Guild:{guild.id}] Start")
     if role == None:
         role = Database.ulb_guilds.get(guild).role
     if rename == None:
         rename = Database.ulb_guilds.get(guild).rename
     for member in guild.members:
         if member in Database.ulb_users.keys():
-            await update_member(member, role=role, rename=rename)
+            try:
+                await update_member(member, role=role, rename=rename)
+            except RoleNotInGuildError:
+                logging.warning(
+                    f"[Utils:update_guild] [Guild:{guild.id}] The role registered ulb role @{role.name} is not found"
+                )
+                break
+    loggind.trace(f"[Utils:update_guild] [Guild:{guild.id}] End")
 
 
 async def update_all_guilds(force_rename: bool = False) -> None:
