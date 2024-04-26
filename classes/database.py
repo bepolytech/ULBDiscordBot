@@ -94,7 +94,7 @@ class Database:
         return cls._loaded
 
     @classmethod
-    def load(cls, bot: Bot) -> None:
+    async def load(cls, bot: Bot) -> bool:
         """Load the data from the google sheet.
 
         Returns
@@ -104,33 +104,37 @@ class Database:
             - Guild: `Dict[disnake.Guild, disnake.Role]`
             - Users: `Dict[disnake.User, UlbUser]]`
         """
-        # First time this is call, we need to load the credentials and the sheet
-        if not cls._sheet:
-            cred_dict = {}
-            cred_dict["type"] = os.getenv("GS_TYPE")
-            cred_dict["project_id"] = os.getenv("GS_PROJECT_ID")
-            cred_dict["auth_uri"] = os.getenv("GS_AUTHOR_URI")
-            cred_dict["token_uri"] = os.getenv("GS_TOKEN_URI")
-            cred_dict["auth_provider_x509_cert_url"] = os.getenv("GS_AUTH_PROV")
-            cred_dict["client_x509_cert_url"] = os.getenv("GS_CLIENT_CERT_URL")
-            cred_dict["private_key"] = os.getenv("GS_PRIVATE_KEY").replace(
-                "\\n", "\n"
-            )  # Python add a '\' before any '\n' when loading a str
-            cred_dict["private_key_id"] = os.getenv("GS_PRIVATE_KEY_ID")
-            cred_dict["client_email"] = os.getenv("GS_CLIENT_EMAIL")
-            cred_dict["client_id"] = int(os.getenv("GS_CLIENT_ID"))
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(cred_dict, cls._scope)
-            cls._client = gspread.authorize(creds)
-            logging.info("[Database] Google sheet credentials loaded.")
+        try:
+            # First time this is call, we need to load the credentials and the sheet
+            if not cls._sheet:
+                cred_dict = {}
+                cred_dict["type"] = os.getenv("GS_TYPE")
+                cred_dict["project_id"] = os.getenv("GS_PROJECT_ID")
+                cred_dict["auth_uri"] = os.getenv("GS_AUTHOR_URI")
+                cred_dict["token_uri"] = os.getenv("GS_TOKEN_URI")
+                cred_dict["auth_provider_x509_cert_url"] = os.getenv("GS_AUTH_PROV")
+                cred_dict["client_x509_cert_url"] = os.getenv("GS_CLIENT_CERT_URL")
+                cred_dict["private_key"] = os.getenv("GS_PRIVATE_KEY").replace(
+                    "\\n", "\n"
+                )  # Python add a '\' before any '\n' when loading a str
+                cred_dict["private_key_id"] = os.getenv("GS_PRIVATE_KEY_ID")
+                cred_dict["client_email"] = os.getenv("GS_CLIENT_EMAIL")
+                cred_dict["client_id"] = int(os.getenv("GS_CLIENT_ID"))
+                creds = ServiceAccountCredentials.from_json_keyfile_dict(cred_dict, cls._scope)
+                cls._client = gspread.authorize(creds)
+                logging.info("[Database] Google sheet credentials loaded.")
 
-            # Open google sheet
-            cls._sheet = cls._client.open_by_url(os.getenv("GOOGLE_SHEET_URL"))
-            cls._users_ws = cls._sheet.worksheet("users")
-            cls._guilds_ws = cls._sheet.worksheet("guilds")
+                # Open google sheet
+                cls._sheet = cls._client.open_by_url(os.getenv("GOOGLE_SHEET_URL"))
+                cls._users_ws = cls._sheet.worksheet("users")
+                cls._guilds_ws = cls._sheet.worksheet("guilds")
 
-            logging.info("[Database] Spreadsheed loaded")
+                logging.info("[Database:load] Spreadsheed loaded")
+        except (ValueError, gspread.exceptions.SpreadsheetNotFound, gspread.exceptions.WorksheetNotFound) as err:
+            await bot.send_error_log(bot.tracebackEx(err))
+            return
 
-        logging.info("[Database] Loading data...")
+        logging.info("[Database:load] Loading data...")
 
         # Load guilds
         cls.ulb_guilds = {}
@@ -142,28 +146,30 @@ class Database:
                 if role:
                     cls.ulb_guilds.setdefault(guild, UlbGuild(role, rename))
                     logging.trace(
-                        f"[Database] Role {role.name}:{role.id} loaded from guild {guild.name}:{guild.id} with {rename=}"
+                        f"[Database:load] Role {role.name}:{role.id} loaded from guild {guild.name}:{guild.id} with {rename=}"
                     )
                 else:
                     logging.warning(
-                        f"[Database] Not able to find role from id={guild_data.get('role_id', int)} in guild {guild.name}:{guild.id}."
+                        f"[Database:load] Not able to find role from id={guild_data.get('role_id', int)} in guild {guild.name}:{guild.id}."
                     )
             else:
-                logging.warning(f"[GoogleSheet] Not able to find guild from id={guild_data.get('guild_id', int)}.")
-        logging.info(f"[Database] Found {len(cls.ulb_guilds)} guilds.")
+                logging.warning(f"[Database:load] Not able to find guild from id={guild_data.get('guild_id', int)}.")
+        logging.info(f"[Database:load] Found {len(cls.ulb_guilds)} guilds.")
 
         # Load users
         cls.ulb_users = {}
+        not_found_counter = 0
         for user_data in cls._users_ws.get_all_records():
             user = bot.get_user(user_data.get("user_id", int))
             if user:
                 cls.ulb_users.setdefault(user, UlbUser(user_data.get("name", str), user_data.get("email", str)))
                 logging.trace(
-                    f"[Database] User {user.name}:{user.id} loaded with name={user_data.get('name')} and email={user_data.get('email')}"
+                    f"[Database:load] User {user.name}:{user.id} loaded with name={user_data.get('name')} and email={user_data.get('email')}"
                 )
             else:
+                not_found_counter += 1
                 logging.warning(f"[Database] Not able to find user from id={user_data.get('user_id',int)}.")
-        logging.info(f"[Database] Found {len(cls.ulb_users)} users.")
+        logging.info(f"[Database:load] {len(cls.ulb_users)} users found, {not_found_counter} not found.")
 
         cls._loaded = True
 
@@ -183,15 +189,15 @@ class Database:
         user_cell: gspread.cell.Cell = cls._users_ws.find(str(user_id), in_column=1)
         await asyncio.sleep(0.1)
         if user_cell:
-            logging.debug(f"[Database] {user_id=} found")
+            logging.trace(f"[Database:_set_user_task] {user_id=} found")
             cls._users_ws.update_cell(user_cell.row, 2, name)
             await asyncio.sleep(0.1)
             cls._users_ws.update_cell(user_cell.row, 3, email)
-            logging.info(f"[Database] {user_id=} updated with {name=} and {email=}")
+            logging.info(f"[Database:_set_user_task] {user_id=} updated with {name=} and {email=}")
         else:
-            logging.debug(f"[Database] {user_id=} not found")
+            logging.trace(f"[Database:_set_user_task] {user_id=} not found")
             cls._users_ws.append_row(values=[str(user_id), name, email])
-            logging.info(f"[Database] {user_id=} added with {name=} and {email=}")
+            logging.info(f"[Database:_set_user_task] {user_id=} added with {name=} and {email=}")
 
     @classmethod
     def set_user(cls, user: disnake.User, name: str, email: str):
@@ -224,10 +230,10 @@ class Database:
         """
         user_cell: gspread.cell.Cell = cls._users_ws.find(str(user_id), in_column=1)
         await asyncio.sleep(0.1)
-        logging.trace(f"[Database] {user_id=} found")
+        logging.trace(f"[Database:_delete_user_task] {user_id=} found")
         cls._users_ws.delete_row(user_cell.row)
         await asyncio.sleep(0.1)
-        logging.info(f"[Database] {user_id=} deleted.")
+        logging.info(f"[Database:_delete_user_task] {user_id=} deleted.")
 
     @classmethod
     def delete_user(cls, user: disnake.User):
@@ -261,14 +267,14 @@ class Database:
         guild_cell: gspread.cell.Cell = cls._guilds_ws.find(str(guild_id), in_column=1)
         await asyncio.sleep(0.1)
         if guild_cell:
-            logging.debug(f"[Database] {guild_id=} found.")
+            logging.trace(f"[Database:_set_guild_task] {guild_id=} found.")
             cls._guilds_ws.update_cell(guild_cell.row, 2, str(role_id))
             cls._guilds_ws.update_cell(guild_cell.row, 3, rename)
-            logging.info(f"[Database] {guild_id=} update with {role_id=} and {rename=}.")
+            logging.info(f"[Database:_set_guild_task] {guild_id=} update with {role_id=} and {rename=}.")
         else:
-            logging.debug(f"[Database] {guild_id=} not found.")
+            logging.trace(f"[Database:_set_guild_task] {guild_id=} not found.")
             cls._guilds_ws.append_row(values=[str(guild_id), str(role_id), rename])
-            logging.info(f"[Database] {guild_id=} added with {role_id=} and {rename=}.")
+            logging.info(f"[Database:_set_guild_task] {guild_id=} added with {role_id=} and {rename=}.")
 
     @classmethod
     def set_guild(cls, guild: disnake.Guild, role: disnake.Role, rename: bool):
@@ -299,10 +305,10 @@ class Database:
         """
         guild_cell: gspread.cell.Cell = cls._guilds_ws.find(str(guild_id), in_column=1)
         await asyncio.sleep(0.1)
-        logging.trace(f"[Database] {guild_id=} found")
+        logging.trace(f"[Database:_delete_guild_task] {guild_id=} found")
         cls._guilds_ws.delete_row(guild_cell.row)
         await asyncio.sleep(0.1)
-        logging.info(f"[Database] {guild_id=} deleted.")
+        logging.info(f"[Database:_delete_guild_task] {guild_id=} deleted.")
 
     @classmethod
     def delete_guild(cls, guild: disnake.Guild):

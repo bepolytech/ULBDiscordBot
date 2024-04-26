@@ -4,7 +4,7 @@
 
 This is a small discord bot written in python using the [disnake library](https://github.com/DisnakeDev/disnake) to make a registration system for ULB discord servers.
 
-The bot checks that a user is a ULB student by verifying their ULB email adress using a one-time generated token sent to their email adress. It then gives them the role and adds their Discord user ID and ULB email adress to a database. The user will is then automatically verified on every server that the bot is running. The bot also has a rename functionality (optional, per server), names are extracted from the email adress.
+**_[Version 1]_**: The bot checks that a user is a ULB student by verifying their ULB email adress using a one-time generated token sent to their email adress. It then gives them the role and adds their Discord user ID and ULB email adress to a database. The user will is then automatically verified on every server that the bot is running. The bot also has a rename functionality (optional, per server), names are extracted from the email adress.
 
 # ➕ Add the bot to your server
 
@@ -196,15 +196,19 @@ To see the bot logs when running with docker in detached mode (`-d`), use the [d
 
 * `/setup`
 
-(Admin permission needed) When adding the bot to a new server, you need to set the @ULB role with the command `/setup`. This command also allows you to choose if you want to force the registered member to get renamed with their real name or not (yes by default).
+**[Admin permission needed]** When adding the bot to a new server, you need to set the @ULB role with the command `/setup`. This command also allows you to choose if you want to force the registered member to get renamed with their real name or not (yes by default).
 
 * `/info`
 
-(Admin permission needed) Get current server information (@ULB role, if rename is enabled, and checks for permission conflicts).
+**[Admin permission needed]** Get current server information (@ULB role, if rename is enabled, and checks for permission conflicts).
 
 * `/ulb`
 
 Once the ULB role is set, when a new user joins the server, either they are already registered (from another of your servers) in which case they will get the `@ULB` role and get renamed, or they are not registered yet and will receive a DM message with the instructions to register themselves using the `/ulb` command.
+
+* `/feedback`
+
+Send feedback directly from discord.
 
 ### Admin server
 
@@ -224,9 +228,17 @@ Edit info of a user.
 
 Delete a user.
 
+* `/server info`
+
+Get information about a guild (ULB role, number of registered members, ...)
+
+* `/stats`
+
+Get statistics about the bot usage (number of configured servers, number of registered users, ...)
+
 * `/update`
 
-This forces a total update of the database and of all the servers. Since the bot already does this automatically at startup and after each reconnection, the only normal usecase for this would be if you manually add an entry (server or user) to the google sheet instead of using the `/user add` command above, we don't recommend manually editing the google sheet.
+This forces a total update of the database and of all the servers. Since the bot already does this automatically at startup and after each reconnection, the only normal usecase for this would be if you manually add an entry (server or user) to the google sheet instead of using the `/user add` command above, we don't recommend manually editing the google sheet. It also includes an option (`/update Non`) to not rename users (on servers where it is enabled) when running this command (default: do **not** force rename on force update).
 
 ## 👤 Author
 
