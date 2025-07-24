@@ -276,9 +276,9 @@ class Admin(commands.Cog):
     async def user_delete(
         self,
         inter: disnake.ApplicationCommandInteraction,
-        name: str = commands.Param(description="Le nom ULB de l'utilisateur.rice"),
+        name: str = commands.Param(description="Le nom ULB de l'utilisateur.rice"), # should make this optional ?
         username: str = commands.Param(description="Le nom discord de l'utilisateur.rice", default=None),
-        user_id: str = commands.Param(description="L'ID Discord de l'utilisateur.rice", min_length=17, max_length=20),
+        user_id: str = commands.Param(description="L'ID Discord de l'utilisateur.rice", min_length=17, max_length=20), # should make this optional as well
         remove_ulb: str = commands.Param(
             description="Retirer l'utilisateur.rice du role ULB dans tous les serveurs ?", choices=["Oui", "Non"]
         ),
@@ -300,16 +300,15 @@ class Admin(commands.Cog):
                 )
             )
             return
-
         if user_data.name.lower() != name.lower():
             await inter.edit_original_response(
-                embed=disnake.Embed(description="L'ID et le nom ULB ne correspondent pas...", color=disnake.Color.red())
+                embed=disnake.Embed(description=f"L'ID et le nom ULB ne correspondent pas... Depuis l'ID '{name.lower()}'(lower()), est différent de '{user_data.name.lower()}'(lower()).", color=disnake.Color.red())
             )
             return
         if f"{user.name}#{user.discriminator}" != username:
             await inter.edit_original_response(
                 embed=disnake.Embed(
-                    description="L'ID et le nom discord ne correspondent pas...", color=disnake.Color.red()
+                    description=f"L'ID et le username discord ne correspondent pas... Depuis l'ID '{username}', est différent de '{user.name}#{user.discriminator}'", color=disnake.Color.red()
                 )
             )
             return

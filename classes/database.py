@@ -339,3 +339,11 @@ class Database:
             if userdata.email == email:
                 return user
         return None
+    
+    #! TODO: check if working ?
+    @classmethod
+    def get_user_by_id(self, user_id: int) -> Optional[disnake.User]:
+        for user in self.ulb_users.keys():
+            if user.id == user_id:
+                return user
+        return None
